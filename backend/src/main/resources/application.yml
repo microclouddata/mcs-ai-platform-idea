@@ -1,0 +1,37 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ai-platform-backend
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/mcs_ai_platform
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
+app:
+  cors:
+    allowed-origins: http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001
+  jwt:
+    secret: change-this-to-a-very-long-random-secret-key-at-least-32-bytes
+    expiration-ms: 86400000
+  storage:
+    local-path: D://file_upload
+  llm:
+    mock-enabled: false
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      base-url: https://api.openai.com
+      model: gpt-3.5-turbo
+
+llm:
+  mock-mode: false
+  embedding:
+    model: text-embedding-3-small
+
+logging:
+  level:
+    org.springframework.security: INFO

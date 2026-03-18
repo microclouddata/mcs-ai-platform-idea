@@ -1,0 +1,6 @@
+backend/target/
+backend/uploads/
+frontend/.next/
+frontend/node_modules/
+.idea/
+.DS_Store
