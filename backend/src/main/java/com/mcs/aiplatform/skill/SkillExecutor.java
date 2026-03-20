@@ -1,4 +1,4 @@
-package com.mcs.aiplatform.nugget;
+package com.mcs.aiplatform.skill;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,21 +14,21 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
-public class NuggetExecutor {
+public class SkillExecutor {
 
-    @Value("${app.nugget.python-binary:python3}")
+    @Value("${app.skill.python-binary:python3}")
     private String pythonBinary;
 
-    @Value("${app.nugget.execution-timeout-seconds:10}")
+    @Value("${app.skill.execution-timeout-seconds:10}")
     private int executionTimeoutSeconds;
 
-    public String execute(Nugget nugget, String input) {
-        if (nugget.getCode() == null || nugget.getCode().isBlank()) {
+    public String execute(Skill skill, String input) {
+        if (skill.getCode() == null || skill.getCode().isBlank()) {
             return "";
         }
-        return switch (nugget.getLanguage()) {
-            case JAVASCRIPT -> executeJs(nugget.getCode(), input);
-            case PYTHON -> executePython(nugget.getCode(), input);
+        return switch (skill.getLanguage()) {
+            case JAVASCRIPT -> executeJs(skill.getCode(), input);
+            case PYTHON -> executePython(skill.getCode(), input);
             case JAVA -> "Java execution not supported yet";
         };
     }
@@ -45,7 +45,7 @@ public class NuggetExecutor {
             Object result = engine.eval(code);
             return result != null ? String.valueOf(result) : "";
         } catch (Exception e) {
-            log.warn("JS nugget execution error: {}", e.getMessage());
+            log.warn("JS skill execution error: {}", e.getMessage());
             return "Error: " + e.getMessage();
         }
     }
@@ -74,7 +74,7 @@ public class NuggetExecutor {
             }
             return output;
         } catch (Exception e) {
-            log.warn("Python nugget execution error: {}", e.getMessage());
+            log.warn("Python skill execution error: {}", e.getMessage());
             return "Error: " + e.getMessage();
         }
     }

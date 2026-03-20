@@ -170,8 +170,8 @@ export default function AgentDetailPage() {
           <div className="mb-2 flex items-center justify-between">
             <h1 className="text-2xl font-semibold">{agent.name}</h1>
             <div className="flex items-center gap-4">
-              <Link href={`/agents/${agentId}/nuggets`} className="text-xs text-[var(--brand)] hover:underline">
-                Nuggets
+              <Link href={`/agents/${agentId}/skills`} className="text-xs text-[var(--brand)] hover:underline">
+                Skills
               </Link>
               <Link href={`/agents/${agentId}/settings`} className="text-xs text-[var(--brand)] hover:underline">
                 Settings

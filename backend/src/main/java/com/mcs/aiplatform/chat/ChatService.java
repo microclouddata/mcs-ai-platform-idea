@@ -5,7 +5,7 @@ import com.mcs.aiplatform.agent.AgentService;
 import com.mcs.aiplatform.llm.LlmProviderFactory;
 import com.mcs.aiplatform.llm.LlmRequest;
 import com.mcs.aiplatform.memory.MemoryService;
-import com.mcs.aiplatform.nugget.NuggetService;
+import com.mcs.aiplatform.skill.SkillService;
 import com.mcs.aiplatform.tool.KnowledgeSearchTool;
 import com.mcs.aiplatform.tool.ToolResult;
 import com.mcs.aiplatform.tool.ToolService;
@@ -24,7 +24,7 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final KnowledgeSearchTool knowledgeSearchTool;
     private final ToolService toolService;
-    private final NuggetService nuggetService;
+    private final SkillService skillService;
     private final MemoryService memoryService;
     private final UsageLogService usageLogService;
     private final LlmProviderFactory llmProviderFactory;
@@ -52,10 +52,10 @@ public class ChatService {
             } else {
                 toolContext = toolOutput;
             }
-            // Append nugget results
-            String nuggetOutput = nuggetService.executeActiveNuggets(agent.getId(), request.message());
-            if (!nuggetOutput.isBlank()) {
-                toolContext = toolContext.isBlank() ? nuggetOutput : toolContext + "\n\n" + nuggetOutput;
+            // Append skill results
+            String skillOutput = skillService.executeActiveSkills(agent.getId(), request.message());
+            if (!skillOutput.isBlank()) {
+                toolContext = toolContext.isBlank() ? skillOutput : toolContext + "\n\n" + skillOutput;
             }
         } else {
             toolContext = "";

@@ -1,20 +1,20 @@
-package com.mcs.aiplatform.nugget;
+package com.mcs.aiplatform.skill;
 
 import java.util.List;
 import java.util.Map;
 
-public record UpdateNuggetRequest(
+public record UpdateSkillRequest(
         String name,
         String description,
         String code,
-        NuggetLanguage language,
-        NuggetStatus status,
-        NuggetType nuggetType,
+        SkillLanguage language,
+        SkillStatus status,
+        SkillType skillType,
         String docId,
         List<String> controlFlags,
         Map<String, String> metadata,
         List<String> tags,
-        List<NuggetParameter> parameters,
+        List<SkillParameter> parameters,
         Boolean modelTool
 ) {
 }

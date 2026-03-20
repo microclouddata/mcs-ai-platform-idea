@@ -2,22 +2,22 @@
 
 import { useState } from 'react';
 import { apiFetch } from '@/lib/api';
-import { Nugget, NuggetLanguage, NuggetParameter, NuggetStatus } from '@/lib/types';
+import { Skill, SkillLanguage, SkillParameter, SkillStatus } from '@/lib/types';
 
 interface Props {
   agentId: string;
-  initial?: Nugget;
-  onSaved: (nugget: Nugget) => void;
+  initial?: Skill;
+  onSaved: (skill: Skill) => void;
   onCancel: () => void;
 }
 
-const LANGUAGES: NuggetLanguage[] = ['PYTHON', 'JAVASCRIPT', 'JAVA'];
+const LANGUAGES: SkillLanguage[] = ['PYTHON', 'JAVASCRIPT', 'JAVA'];
 
-function emptyParam(): NuggetParameter & { _key: number } {
+function emptyParam(): SkillParameter & { _key: number } {
   return { name: '', type: 'string', description: '', _key: Date.now() + Math.random() };
 }
 
-export default function NuggetForm({ agentId, initial, onSaved, onCancel }: Props) {
+export default function SkillForm({ agentId, initial, onSaved, onCancel }: Props) {
   const isEdit = !!initial;
   const [tab, setTab] = useState<'details' | 'code'>('details');
   const [saving, setSaving] = useState(false);
@@ -26,8 +26,8 @@ export default function NuggetForm({ agentId, initial, onSaved, onCancel }: Prop
   // Fields
   const [name, setName] = useState(initial?.name ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
-  const [language, setLanguage] = useState<NuggetLanguage>(initial?.language ?? 'PYTHON');
-  const [status, setStatus] = useState<NuggetStatus>(initial?.status ?? 'ACTIVE');
+  const [language, setLanguage] = useState<SkillLanguage>(initial?.language ?? 'PYTHON');
+  const [status, setStatus] = useState<SkillStatus>(initial?.status ?? 'ACTIVE');
   const [modelTool, setModelTool] = useState(initial?.modelTool ?? false);
   const [docId, setDocId] = useState(initial?.docId ?? '');
   const [code, setCode] = useState(initial?.code ?? '');
@@ -35,7 +35,7 @@ export default function NuggetForm({ agentId, initial, onSaved, onCancel }: Prop
   // Dynamic lists
   const [controlFlags, setControlFlags] = useState<string[]>(initial?.controlFlags ?? []);
   const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
-  const [params, setParams] = useState<(NuggetParameter & { _key: number })[]>(
+  const [params, setParams] = useState<(SkillParameter & { _key: number })[]>(
     (initial?.parameters ?? []).map((p, i) => ({ ...p, _key: i }))
   );
   const [metaEntries, setMetaEntries] = useState<{ k: string; v: string; _key: number }[]>(
@@ -53,7 +53,7 @@ export default function NuggetForm({ agentId, initial, onSaved, onCancel }: Prop
         code,
         language,
         status,
-        nuggetType: 'CODE',
+        skillType: 'CODE',
         docId: docId.trim() || null,
         controlFlags,
         metadata: Object.fromEntries(metaEntries.filter(e => e.k).map(e => [e.k, e.v])),
@@ -61,8 +61,8 @@ export default function NuggetForm({ agentId, initial, onSaved, onCancel }: Prop
         parameters: params.map(({ name, type, description }) => ({ name, type, description })),
         modelTool,
       };
-      const path = isEdit ? `/agents/${agentId}/nuggets/${initial!.id}` : `/agents/${agentId}/nuggets`;
-      const saved = await apiFetch<Nugget>(path, {
+      const path = isEdit ? `/agents/${agentId}/skills/${initial!.id}` : `/agents/${agentId}/skills`;
+      const saved = await apiFetch<Skill>(path, {
         method: isEdit ? 'PUT' : 'POST',
         body: JSON.stringify(body),
       });
@@ -143,7 +143,7 @@ export default function NuggetForm({ agentId, initial, onSaved, onCancel }: Prop
                 <label className="text-xs text-[var(--muted)] uppercase tracking-wider mb-1 block">Language</label>
                 <select
                   value={language}
-                  onChange={e => setLanguage(e.target.value as NuggetLanguage)}
+                  onChange={e => setLanguage(e.target.value as SkillLanguage)}
                   className="w-full bg-[var(--panel-soft)] border border-[var(--border)] rounded-xl px-3 py-2 text-sm outline-none"
                 >
                   {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
@@ -339,7 +339,7 @@ export default function NuggetForm({ agentId, initial, onSaved, onCancel }: Prop
               spellCheck={false}
             />
             <p className="mt-2 text-xs text-[var(--muted)]">
-              Available variable: <code className="font-mono text-[var(--brand)]">input</code> — contains the user message passed to this nugget.
+              Available variable: <code className="font-mono text-[var(--brand)]">input</code> — contains the user message passed to this skill.
             </p>
           </div>
         )}

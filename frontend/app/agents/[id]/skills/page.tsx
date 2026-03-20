@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
-import { Agent, Nugget } from '@/lib/types';
-import NuggetForm from './NuggetForm';
+import { Agent, Skill } from '@/lib/types';
+import SkillForm from './SkillForm';
 
 function getCurrentUserId(): string | null {
   return typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
@@ -14,13 +14,13 @@ function getCurrentUserId(): string | null {
 type ViewMode = 'list' | 'create' | 'edit';
 type DetailTab = 'details' | 'code' | 'analytics';
 
-export default function NuggetsPage() {
+export default function SkillsPage() {
   const { id: agentId } = useParams<{ id: string }>();
   const router = useRouter();
 
   const [agent, setAgent] = useState<Agent | null>(null);
-  const [nuggets, setNuggets] = useState<Nugget[]>([]);
-  const [selected, setSelected] = useState<Nugget | null>(null);
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [selected, setSelected] = useState<Skill | null>(null);
   const [mode, setMode] = useState<ViewMode>('list');
   const [detailTab, setDetailTab] = useState<DetailTab>('details');
   const [loading, setLoading] = useState(true);
@@ -31,14 +31,14 @@ export default function NuggetsPage() {
       try {
         const [a, ns] = await Promise.all([
           apiFetch<Agent>(`/agents/${agentId}`),
-          apiFetch<Nugget[]>(`/agents/${agentId}/nuggets`),
+          apiFetch<Skill[]>(`/agents/${agentId}/skills`),
         ]);
         if (a.userId !== getCurrentUserId()) {
           router.replace(`/agents/${agentId}`);
           return;
         }
         setAgent(a);
-        setNuggets(ns);
+        setSkills(ns);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load');
       } finally {
@@ -48,37 +48,37 @@ export default function NuggetsPage() {
     void load();
   }, [agentId]);
 
-  async function handleToggleStatus(nugget: Nugget) {
+  async function handleToggleStatus(skill: Skill) {
     try {
-      const updated = await apiFetch<Nugget>(`/agents/${agentId}/nuggets/${nugget.id}/status`, { method: 'PATCH' });
-      setNuggets(prev => prev.map(n => n.id === updated.id ? updated : n));
+      const updated = await apiFetch<Skill>(`/agents/${agentId}/skills/${skill.id}/status`, { method: 'PATCH' });
+      setSkills(prev => prev.map(n => n.id === updated.id ? updated : n));
       if (selected?.id === updated.id) setSelected(updated);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Toggle failed');
     }
   }
 
-  async function handleDelete(nugget: Nugget) {
-    if (!confirm(`Delete nugget "${nugget.name}"? This cannot be undone.`)) return;
+  async function handleDelete(skill: Skill) {
+    if (!confirm(`Delete skill "${skill.name}"? This cannot be undone.`)) return;
     try {
-      await apiFetch(`/agents/${agentId}/nuggets/${nugget.id}`, { method: 'DELETE' });
-      setNuggets(prev => prev.filter(n => n.id !== nugget.id));
-      if (selected?.id === nugget.id) { setSelected(null); setMode('list'); }
+      await apiFetch(`/agents/${agentId}/skills/${skill.id}`, { method: 'DELETE' });
+      setSkills(prev => prev.filter(n => n.id !== skill.id));
+      if (selected?.id === skill.id) { setSelected(null); setMode('list'); }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Delete failed');
     }
   }
 
-  function handleSaved(nugget: Nugget) {
-    setNuggets(prev => {
-      const exists = prev.find(n => n.id === nugget.id);
-      return exists ? prev.map(n => n.id === nugget.id ? nugget : n) : [nugget, ...prev];
+  function handleSaved(skill: Skill) {
+    setSkills(prev => {
+      const exists = prev.find(n => n.id === skill.id);
+      return exists ? prev.map(n => n.id === skill.id ? skill : n) : [skill, ...prev];
     });
-    setSelected(nugget);
+    setSelected(skill);
     setMode('list');
   }
 
-  if (loading) return <div className="p-8 text-[var(--muted)] text-sm">Loading nuggets…</div>;
+  if (loading) return <div className="p-8 text-[var(--muted)] text-sm">Loading skills…</div>;
 
   const showForm = mode === 'create' || mode === 'edit';
 
@@ -90,7 +90,7 @@ export default function NuggetsPage() {
         <span className="text-[var(--border)]">/</span>
         <Link href={`/agents/${agentId}`} className="text-[var(--muted)] hover:text-[var(--foreground)]">{agent?.name ?? agentId}</Link>
         <span className="text-[var(--border)]">/</span>
-        <span className="text-[var(--foreground)] font-medium">Nuggets</span>
+        <span className="text-[var(--foreground)] font-medium">Skills</span>
         <div className="ml-auto flex gap-3">
           <Link href={`/agents/${agentId}/settings`} className="text-xs text-[var(--muted)] hover:text-[var(--foreground)]">Settings</Link>
         </div>
@@ -101,10 +101,10 @@ export default function NuggetsPage() {
       )}
 
       <div className="flex h-[calc(100vh-49px)]">
-        {/* Left panel — nugget list */}
+        {/* Left panel — skill list */}
         <div className="w-80 border-r border-[var(--border)] flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
-            <span className="text-sm font-semibold text-[var(--foreground)]">Nuggets</span>
+            <span className="text-sm font-semibold text-[var(--foreground)]">Skills</span>
             <div className="flex gap-2">
               {/* Language icons */}
               <span className="text-xs px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 font-mono">JS</span>
@@ -119,32 +119,32 @@ export default function NuggetsPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {nuggets.length === 0 && (
+            {skills.length === 0 && (
               <div className="p-6 text-sm text-[var(--muted)] text-center">
-                No nuggets yet.<br />
+                No skills yet.<br />
                 <button
                   onClick={() => { setSelected(null); setMode('create'); }}
                   className="mt-2 text-[var(--brand)] hover:underline"
                 >
-                  Create your first nugget
+                  Create your first skill
                 </button>
               </div>
             )}
-            {nuggets.map(nugget => (
+            {skills.map(skill => (
               <button
-                key={nugget.id}
-                onClick={() => { setSelected(nugget); setMode('list'); setDetailTab('details'); }}
-                className={`w-full text-left px-4 py-3 border-b border-[var(--border)] hover:bg-[var(--panel-soft)] transition-colors ${selected?.id === nugget.id && !showForm ? 'bg-[var(--panel-soft)] border-l-2 border-l-[var(--brand)]' : ''}`}
+                key={skill.id}
+                onClick={() => { setSelected(skill); setMode('list'); setDetailTab('details'); }}
+                className={`w-full text-left px-4 py-3 border-b border-[var(--border)] hover:bg-[var(--panel-soft)] transition-colors ${selected?.id === skill.id && !showForm ? 'bg-[var(--panel-soft)] border-l-2 border-l-[var(--brand)]' : ''}`}
               >
                 <div className="flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${nugget.status === 'ACTIVE' ? 'bg-green-400' : 'bg-[var(--muted)]'}`} />
-                  <span className="text-sm font-medium text-[var(--foreground)] truncate">{nugget.name || 'Untitled'}</span>
-                  <span className={`ml-auto text-xs shrink-0 ${nugget.status === 'ACTIVE' ? 'text-green-400' : 'text-[var(--muted)]'}`}>
-                    {nugget.status}
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${skill.status === 'ACTIVE' ? 'bg-green-400' : 'bg-[var(--muted)]'}`} />
+                  <span className="text-sm font-medium text-[var(--foreground)] truncate">{skill.name || 'Untitled'}</span>
+                  <span className={`ml-auto text-xs shrink-0 ${skill.status === 'ACTIVE' ? 'text-green-400' : 'text-[var(--muted)]'}`}>
+                    {skill.status}
                   </span>
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--muted)] ml-4 truncate">
-                  {nugget.language} · {nugget.nuggetType}
+                  {skill.language} · {skill.skillType}
                 </div>
               </button>
             ))}
@@ -154,7 +154,7 @@ export default function NuggetsPage() {
         {/* Right panel */}
         <div className="flex-1 overflow-hidden">
           {showForm && (
-            <NuggetForm
+            <SkillForm
               agentId={agentId}
               initial={mode === 'edit' ? selected ?? undefined : undefined}
               onSaved={handleSaved}
@@ -164,7 +164,7 @@ export default function NuggetsPage() {
 
           {!showForm && !selected && (
             <div className="flex items-center justify-center h-full text-[var(--muted)] text-sm">
-              Select a nugget or create a new one
+              Select a skill or create a new one
             </div>
           )}
 
@@ -227,8 +227,8 @@ export default function NuggetsPage() {
                         <p className="mt-1 text-sm text-[var(--foreground)]">{selected.docId || 'NONE'}</p>
                       </div>
                       <div>
-                        <label className="text-xs text-[var(--muted)] uppercase tracking-wider">Nugget type</label>
-                        <p className="mt-1 text-sm text-[var(--foreground)]">{selected.nuggetType}</p>
+                        <label className="text-xs text-[var(--muted)] uppercase tracking-wider">Skill type</label>
+                        <p className="mt-1 text-sm text-[var(--foreground)]">{selected.skillType}</p>
                       </div>
                     </div>
                     <div>

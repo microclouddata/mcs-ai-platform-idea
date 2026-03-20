@@ -129,31 +129,31 @@ export interface Integration {
   createdAt?: string;
 }
 
-// Nugget types
-export type NuggetLanguage = 'JAVASCRIPT' | 'PYTHON' | 'JAVA';
-export type NuggetStatus = 'ACTIVE' | 'INACTIVE';
-export type NuggetType = 'CODE';
+// Skill types
+export type SkillLanguage = 'JAVASCRIPT' | 'PYTHON' | 'JAVA';
+export type SkillStatus = 'ACTIVE' | 'INACTIVE';
+export type SkillType = 'CODE';
 
-export interface NuggetParameter {
+export interface SkillParameter {
   name: string;
   type: string;
   description: string;
 }
 
-export interface Nugget {
+export interface Skill {
   id: string;
   agentId: string;
   name: string;
   description: string;
   code: string;
-  language: NuggetLanguage;
-  status: NuggetStatus;
-  nuggetType: NuggetType;
+  language: SkillLanguage;
+  status: SkillStatus;
+  skillType: SkillType;
   docId?: string;
   controlFlags: string[];
   metadata: Record<string, string>;
   tags: string[];
-  parameters: NuggetParameter[];
+  parameters: SkillParameter[];
   modelTool: boolean;
   createdAt?: string;
 }
