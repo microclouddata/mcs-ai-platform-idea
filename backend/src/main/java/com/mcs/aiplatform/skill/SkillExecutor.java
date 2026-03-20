@@ -1,5 +1,6 @@
 package com.mcs.aiplatform.skill;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -9,6 +10,7 @@ import javax.script.ScriptEngineManager;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -16,11 +18,45 @@ import java.util.stream.Collectors;
 @Component
 public class SkillExecutor {
 
-    @Value("${app.skill.python-binary:python3}")
-    private String pythonBinary;
+    /** Ordered candidates tried at startup; first one that exits 0 wins. */
+    private static final List<String> PYTHON_CANDIDATES = List.of("py", "python", "python3");
+
+    @Value("${app.skill.python-binary:}")
+    private String configuredPythonBinary;
 
     @Value("${app.skill.execution-timeout-seconds:10}")
     private int executionTimeoutSeconds;
+
+    private String pythonBinary;
+
+    @PostConstruct
+    void resolvePythonBinary() {
+        // If the user explicitly configured a binary, trust it.
+        if (configuredPythonBinary != null && !configuredPythonBinary.isBlank()) {
+            pythonBinary = configuredPythonBinary.trim();
+            log.info("Python binary (configured): {}", pythonBinary);
+            return;
+        }
+        // Otherwise probe each candidate and pick the first that exits 0.
+        for (String candidate : PYTHON_CANDIDATES) {
+            try {
+                Process p = new ProcessBuilder(candidate, "--version")
+                        .redirectErrorStream(true)
+                        .start();
+                boolean done = p.waitFor(5, TimeUnit.SECONDS);
+                if (done && p.exitValue() == 0) {
+                    pythonBinary = candidate;
+                    log.info("Python binary (auto-detected): {}", pythonBinary);
+                    return;
+                }
+            } catch (Exception ignored) {
+                // candidate not found — try next
+            }
+        }
+        pythonBinary = "python"; // last-resort default
+        log.warn("No Python binary detected; falling back to '{}'. " +
+                 "Set app.skill.python-binary in application.properties to override.", pythonBinary);
+    }
 
     public String execute(Skill skill, String input) {
         if (skill.getCode() == null || skill.getCode().isBlank()) {
