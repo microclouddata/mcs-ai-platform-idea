@@ -10,6 +10,8 @@ import javax.script.ScriptEngineManager;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -87,8 +89,15 @@ public class SkillExecutor {
     }
 
     private String executePython(String code, String input) {
+        Path tempFile = null;
         try {
-            ProcessBuilder pb = new ProcessBuilder(pythonBinary, "-c", code);
+            // Write code to a temp file so that newlines, quotes, and special
+            // characters are never mangled by shell argument parsing (a common
+            // failure mode on Windows when using the -c flag).
+            tempFile = Files.createTempFile("skill_", ".py");
+            Files.writeString(tempFile, code, StandardCharsets.UTF_8);
+
+            ProcessBuilder pb = new ProcessBuilder(pythonBinary, tempFile.toString());
             pb.environment().put("INPUT", input != null ? input : "");
             pb.redirectErrorStream(true);
             Process process = pb.start();
@@ -112,6 +121,10 @@ public class SkillExecutor {
         } catch (Exception e) {
             log.warn("Python skill execution error: {}", e.getMessage());
             return "Error: " + e.getMessage();
+        } finally {
+            if (tempFile != null) {
+                try { Files.deleteIfExists(tempFile); } catch (Exception ignored) {}
+            }
         }
     }
 }
