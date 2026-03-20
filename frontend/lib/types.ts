@@ -128,3 +128,32 @@ export interface Integration {
   lastTriggeredAt?: string;
   createdAt?: string;
 }
+
+// Nugget types
+export type NuggetLanguage = 'JAVASCRIPT' | 'PYTHON' | 'JAVA';
+export type NuggetStatus = 'ACTIVE' | 'INACTIVE';
+export type NuggetType = 'CODE';
+
+export interface NuggetParameter {
+  name: string;
+  type: string;
+  description: string;
+}
+
+export interface Nugget {
+  id: string;
+  agentId: string;
+  name: string;
+  description: string;
+  code: string;
+  language: NuggetLanguage;
+  status: NuggetStatus;
+  nuggetType: NuggetType;
+  docId?: string;
+  controlFlags: string[];
+  metadata: Record<string, string>;
+  tags: string[];
+  parameters: NuggetParameter[];
+  modelTool: boolean;
+  createdAt?: string;
+}
