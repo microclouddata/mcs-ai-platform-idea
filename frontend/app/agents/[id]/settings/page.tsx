@@ -3,7 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
-import { Agent, KnowledgeBase } from '@/lib/types';
+import { Agent } from '@/lib/types';
+
+function getCurrentUserId(): string | null {
+  return typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+}
 
 const MODELS = ['gpt-4.1-mini', 'gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'];
 const TOOL_TYPES = ['KNOWLEDGE_SEARCH', 'WEB_SEARCH', 'CALCULATOR'];
@@ -13,7 +17,6 @@ export default function AgentSettingsPage() {
   const router = useRouter();
 
   const [agent, setAgent] = useState<Agent | null>(null);
-  const [kbs, setKbs] = useState<KnowledgeBase[]>([]);
   const [enabledTools, setEnabledTools] = useState<string[]>([]);
   const [agentEnabled, setAgentEnabled] = useState(true);
   const [status, setStatus] = useState('');
@@ -27,15 +30,17 @@ export default function AgentSettingsPage() {
   const [temperature, setTemperature] = useState(0.2);
   const [memoryEnabled, setMemoryEnabled] = useState(false);
   const [toolsEnabled, setToolsEnabled] = useState(true);
-  const [knowledgeBaseIds, setKnowledgeBaseIds] = useState<string[]>([]);
 
   useEffect(() => {
     async function load() {
-      const [a, bindings, kbList] = await Promise.all([
+      const [a, bindings] = await Promise.all([
         apiFetch<Agent>(`/agents/${id}`),
         apiFetch<{ toolType: string }[]>(`/agents/${id}/tools`),
-        apiFetch<KnowledgeBase[]>('/knowledge-bases'),
       ]);
+      if (a.userId !== getCurrentUserId()) {
+        router.replace(`/agents/${id}`);
+        return;
+      }
       setAgent(a);
       setName(a.name);
       setDescription(a.description);
@@ -45,9 +50,7 @@ export default function AgentSettingsPage() {
       setAgentEnabled(a.enabled ?? true);
       setMemoryEnabled(a.memoryEnabled);
       setToolsEnabled(a.toolsEnabled);
-      setKnowledgeBaseIds(a.knowledgeBaseIds ?? []);
       setEnabledTools(bindings.map((b) => b.toolType));
-      setKbs(kbList);
     }
     void load();
   }, [id]);
@@ -91,7 +94,6 @@ export default function AgentSettingsPage() {
           temperature,
           memoryEnabled,
           toolsEnabled,
-          knowledgeBaseIds,
         }),
       });
       await apiFetch(`/agents/${id}/tools`, {
@@ -109,12 +111,6 @@ export default function AgentSettingsPage() {
   function toggleTool(tool: string) {
     setEnabledTools((prev) =>
       prev.includes(tool) ? prev.filter((t) => t !== tool) : [...prev, tool]
-    );
-  }
-
-  function toggleKb(kbId: string) {
-    setKnowledgeBaseIds((prev) =>
-      prev.includes(kbId) ? prev.filter((k) => k !== kbId) : [...prev, kbId]
     );
   }
 
@@ -190,19 +186,6 @@ export default function AgentSettingsPage() {
           </div>
         )}
       </section>
-
-      {kbs.length > 0 && (
-        <section className="rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-6 space-y-4">
-          <h2 className="text-xl font-semibold">Knowledge Bases</h2>
-          <p className="text-sm text-[var(--muted)]">Select which knowledge bases this agent can search:</p>
-          {kbs.map((kb) => (
-            <label key={kb.id} className="flex items-center gap-3 cursor-pointer">
-              <input type="checkbox" checked={knowledgeBaseIds.includes(kb.id)} onChange={() => toggleKb(kb.id)} className="h-4 w-4" />
-              <span className="text-sm">{kb.name}</span>
-            </label>
-          ))}
-        </section>
-      )}
 
       <div className="flex items-center justify-between">
         <p className="text-sm text-[var(--muted)]">{status}</p>

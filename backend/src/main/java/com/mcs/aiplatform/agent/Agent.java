@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.ArrayList;
 import java.util.List;
 
+
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Document(collection = "agents")
@@ -28,5 +29,4 @@ public class Agent extends BaseEntity {
     private boolean enabled = true;
     private boolean memoryEnabled = false;
     private boolean toolsEnabled = true;
-    private List<String> knowledgeBaseIds = new ArrayList<>();
 }

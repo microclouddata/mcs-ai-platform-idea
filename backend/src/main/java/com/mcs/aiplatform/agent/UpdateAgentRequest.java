@@ -11,6 +11,5 @@ public record UpdateAgentRequest(
         Double temperature,
         List<String> tools,
         Boolean memoryEnabled,
-        Boolean toolsEnabled,
-        List<String> knowledgeBaseIds
+        Boolean toolsEnabled
 ) {}

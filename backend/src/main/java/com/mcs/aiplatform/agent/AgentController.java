@@ -24,7 +24,7 @@ public class AgentController {
 
     @GetMapping("/{agentId}")
     public ApiResponse<Agent> get(@PathVariable String agentId) {
-        return ApiResponse.ok(agentService.get(CurrentUser.userId(), agentId));
+        return ApiResponse.ok(agentService.getForUse(agentId, CurrentUser.userId()));
     }
 
     @PutMapping("/{agentId}")

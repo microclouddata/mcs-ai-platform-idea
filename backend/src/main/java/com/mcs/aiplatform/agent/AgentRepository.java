@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface AgentRepository extends MongoRepository<Agent, String> {
     List<Agent> findByUserIdOrderByCreatedAtDesc(String userId);
     Optional<Agent> findByIdAndUserId(String id, String userId);
+    List<Agent> findByOrganizationIdInAndEnabledTrueOrderByCreatedAtDesc(List<String> organizationIds);
 }

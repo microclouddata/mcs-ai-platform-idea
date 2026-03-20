@@ -26,16 +26,9 @@ export default function NavBar() {
       {isLoggedIn ? (
         <>
           <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
-          <Link href="/knowledge-bases" className="hover:text-white transition-colors">Knowledge Bases</Link>
-          <Link href="/workflows" className="hover:text-white transition-colors">Workflows</Link>
-          <Link href="/jobs" className="hover:text-white transition-colors">Jobs</Link>
-          <Link href="/templates" className="hover:text-white transition-colors">Templates</Link>
           <Link href="/usage" className="hover:text-white transition-colors">Usage</Link>
           <Link href="/organization" className="hover:text-white transition-colors">Organization</Link>
           <Link href="/billing" className="hover:text-white transition-colors">Billing</Link>
-          <Link href="/api-keys" className="hover:text-white transition-colors">API Keys</Link>
-          <Link href="/audit" className="hover:text-white transition-colors">Audit</Link>
-          <Link href="/marketplace" className="hover:text-white transition-colors">Marketplace</Link>
           <Link href="/integrations" className="hover:text-white transition-colors">Integrations</Link>
           <Link href="/admin" className="hover:text-white transition-colors">Admin</Link>
           <button onClick={handleLogout} className="hover:text-white transition-colors">

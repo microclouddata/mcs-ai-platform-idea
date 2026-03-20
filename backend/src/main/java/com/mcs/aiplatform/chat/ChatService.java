@@ -28,7 +28,7 @@ public class ChatService {
     private final LlmProviderFactory llmProviderFactory;
 
     public ChatResponse chat(String userId, ChatRequest request) {
-        Agent agent = agentService.get(userId, request.agentId());
+        Agent agent = agentService.getForUse(request.agentId(), userId);
         ChatSession session = resolveSession(userId, request.agentId(), request.sessionId(), request.message());
 
         ChatMessage userMessage = new ChatMessage();

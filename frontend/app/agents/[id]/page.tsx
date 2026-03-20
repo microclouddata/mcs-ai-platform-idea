@@ -11,6 +11,7 @@ export default function AgentDetailPage() {
   const agentId = params.id as string;
 
   const [agent, setAgent] = useState<Agent | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
   const [documents, setDocuments] = useState<DocumentFile[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string>('');
@@ -23,7 +24,10 @@ export default function AgentDetailPage() {
 
   async function loadAgent() {
     const data = await apiFetch<Agent>(`/agents/${agentId}`);
+    const currentUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
     setAgent(data);
+    setIsOwner(data.userId === currentUserId);
+    return data.userId === currentUserId;
   }
 
   async function loadDocuments() {
@@ -37,7 +41,6 @@ export default function AgentDetailPage() {
     const a = document.createElement('a');
     a.href = url;
     a.download = doc.fileName;
-    // Pass token via query param since <a> can't set headers
     fetch(url, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => res.blob())
       .then((blob) => {
@@ -109,21 +112,68 @@ export default function AgentDetailPage() {
   }
 
   useEffect(() => {
-    void loadAgent();
-    void loadDocuments();
+    async function init() {
+      const owner = await loadAgent();
+      if (owner) void loadDocuments();
+    }
+    void init();
   }, [agentId]);
+
+  const chatSection = (
+    <section className="rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-6">
+      <h2 className="mb-4 text-2xl font-semibold">Chat</h2>
+      <div className="mb-4 h-[480px] overflow-y-auto rounded-3xl border border-[var(--border)] bg-black/20 p-4">
+        {messages.length === 0 ? <p className="text-[var(--muted)]">Ask about your uploaded documents.</p> : null}
+        <div className="space-y-4">
+          {messages.map((item) => (
+            <div key={item.id} className="rounded-2xl border border-[var(--border)] bg-[var(--panel-soft)] p-4">
+              <div className="mb-2 text-xs font-bold tracking-[0.25em] text-[var(--brand)]">{item.role}</div>
+              <div className="whitespace-pre-wrap text-sm leading-6 text-white">{item.content}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <textarea
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        rows={5}
+        className="mb-3 w-full rounded-2xl border border-slate-300 px-4 py-3"
+        placeholder="Ask a question about your uploaded files"
+      />
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-[var(--muted)]">{status}</p>
+        <button disabled={saving} className="rounded-2xl bg-[var(--brand)] px-5 py-3 font-semibold text-slate-950 disabled:opacity-50" onClick={sendMessage}>
+          Send
+        </button>
+      </div>
+    </section>
+  );
+
+  if (!agent) return <p className="text-[var(--muted)]">Loading...</p>;
+
+  if (!isOwner) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-4">
+        <div>
+          <h1 className="text-2xl font-semibold">{agent.name}</h1>
+          <p className="text-sm text-[var(--muted)]">{agent.description}</p>
+        </div>
+        {chatSection}
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
       <aside className="space-y-6">
         <section className="rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-6">
           <div className="mb-2 flex items-center justify-between">
-            <h1 className="text-2xl font-semibold">{agent?.name ?? 'Loading...'}</h1>
+            <h1 className="text-2xl font-semibold">{agent.name}</h1>
             <Link href={`/agents/${agentId}/settings`} className="text-xs text-[var(--brand)] hover:underline">
               Settings
             </Link>
           </div>
-          <p className="text-sm text-[var(--muted)]">{agent?.description}</p>
+          <p className="text-sm text-[var(--muted)]">{agent.description}</p>
         </section>
 
         <section className="rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-6">
@@ -185,33 +235,7 @@ export default function AgentDetailPage() {
         </section>
       </aside>
 
-      <section className="rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-6">
-        <h2 className="mb-4 text-2xl font-semibold">Chat</h2>
-        <div className="mb-4 h-[480px] overflow-y-auto rounded-3xl border border-[var(--border)] bg-black/20 p-4">
-          {messages.length === 0 ? <p className="text-[var(--muted)]">Ask about your uploaded documents.</p> : null}
-          <div className="space-y-4">
-            {messages.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-[var(--border)] bg-[var(--panel-soft)] p-4">
-                <div className="mb-2 text-xs font-bold tracking-[0.25em] text-[var(--brand)]">{item.role}</div>
-                <div className="whitespace-pre-wrap text-sm leading-6 text-white">{item.content}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          rows={5}
-          className="mb-3 w-full rounded-2xl border border-slate-300 px-4 py-3"
-          placeholder="Ask a question about your uploaded files"
-        />
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-[var(--muted)]">{status}</p>
-          <button disabled={saving} className="rounded-2xl bg-[var(--brand)] px-5 py-3 font-semibold text-slate-950 disabled:opacity-50" onClick={sendMessage}>
-            Send
-          </button>
-        </div>
-      </section>
+      {chatSection}
     </div>
   );
 }
