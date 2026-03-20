@@ -5,6 +5,7 @@ import com.mcs.aiplatform.agent.AgentService;
 import com.mcs.aiplatform.llm.LlmProviderFactory;
 import com.mcs.aiplatform.llm.LlmRequest;
 import com.mcs.aiplatform.memory.MemoryService;
+import com.mcs.aiplatform.skill.SkillService;
 import com.mcs.aiplatform.tool.KnowledgeSearchTool;
 import com.mcs.aiplatform.tool.ToolResult;
 import com.mcs.aiplatform.tool.ToolService;
@@ -13,16 +14,22 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class ChatService {
+
+    private static final Pattern CALL_SKILL_PATTERN =
+            Pattern.compile("^call\\s+(.+)$", Pattern.CASE_INSENSITIVE);
 
     private final AgentService agentService;
     private final ChatSessionRepository chatSessionRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final KnowledgeSearchTool knowledgeSearchTool;
     private final ToolService toolService;
+    private final SkillService skillService;
     private final MemoryService memoryService;
     private final UsageLogService usageLogService;
     private final LlmProviderFactory llmProviderFactory;
@@ -39,6 +46,26 @@ public class ChatService {
         userMessage.setContent(request.message());
         chatMessageRepository.save(userMessage);
 
+        // "call <skill name>" — execute the named skill directly and return its output
+        Matcher callMatcher = CALL_SKILL_PATTERN.matcher(request.message().trim());
+        if (callMatcher.matches()) {
+            String skillName = callMatcher.group(1).trim();
+            String skillResult;
+            try {
+                skillResult = skillService.executeByName(agent.getId(), skillName, "");
+            } catch (IllegalArgumentException e) {
+                skillResult = e.getMessage();
+            }
+            ChatMessage skillResponse = new ChatMessage();
+            skillResponse.setSessionId(session.getId());
+            skillResponse.setAgentId(agent.getId());
+            skillResponse.setUserId(userId);
+            skillResponse.setRole("ASSISTANT");
+            skillResponse.setContent(skillResult);
+            chatMessageRepository.save(skillResponse);
+            return new ChatResponse(session.getId(), skillResult);
+        }
+
         // Tool execution
         String toolContext;
         if (agent.isToolsEnabled()) {
@@ -49,6 +76,11 @@ public class ChatService {
                 toolContext = legacyResult.content();
             } else {
                 toolContext = toolOutput;
+            }
+            // Append skill results
+            String skillOutput = skillService.executeActiveSkills(agent.getId(), request.message());
+            if (!skillOutput.isBlank()) {
+                toolContext = toolContext.isBlank() ? skillOutput : toolContext + "\n\n" + skillOutput;
             }
         } else {
             toolContext = "";
