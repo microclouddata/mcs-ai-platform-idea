@@ -14,10 +14,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class ChatService {
+
+    private static final Pattern CALL_SKILL_PATTERN =
+            Pattern.compile("^call\\s+(.+)$", Pattern.CASE_INSENSITIVE);
 
     private final AgentService agentService;
     private final ChatSessionRepository chatSessionRepository;
@@ -40,6 +45,26 @@ public class ChatService {
         userMessage.setRole("USER");
         userMessage.setContent(request.message());
         chatMessageRepository.save(userMessage);
+
+        // "call <skill name>" — execute the named skill directly and return its output
+        Matcher callMatcher = CALL_SKILL_PATTERN.matcher(request.message().trim());
+        if (callMatcher.matches()) {
+            String skillName = callMatcher.group(1).trim();
+            String skillResult;
+            try {
+                skillResult = skillService.executeByName(agent.getId(), skillName, "");
+            } catch (IllegalArgumentException e) {
+                skillResult = e.getMessage();
+            }
+            ChatMessage skillResponse = new ChatMessage();
+            skillResponse.setSessionId(session.getId());
+            skillResponse.setAgentId(agent.getId());
+            skillResponse.setUserId(userId);
+            skillResponse.setRole("ASSISTANT");
+            skillResponse.setContent(skillResult);
+            chatMessageRepository.save(skillResponse);
+            return new ChatResponse(session.getId(), skillResult);
+        }
 
         // Tool execution
         String toolContext;

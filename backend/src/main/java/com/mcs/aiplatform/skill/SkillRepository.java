@@ -13,5 +13,7 @@ public interface SkillRepository extends MongoRepository<Skill, String> {
 
     Optional<Skill> findByIdAndAgentId(String id, String agentId);
 
+    Optional<Skill> findByAgentIdAndNameIgnoreCase(String agentId, String name);
+
     void deleteByAgentId(String agentId);
 }

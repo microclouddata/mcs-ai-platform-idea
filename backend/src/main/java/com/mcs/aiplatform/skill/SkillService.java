@@ -64,6 +64,16 @@ public class SkillService {
     }
 
     /**
+     * Called by ChatService when the user types "call <skill name>" in chat.
+     * Looks up the skill by name (case-insensitive) and executes it directly.
+     */
+    public String executeByName(String agentId, String skillName, String input) {
+        Skill skill = skillRepository.findByAgentIdAndNameIgnoreCase(agentId, skillName.trim())
+                .orElseThrow(() -> new IllegalArgumentException("Skill not found: " + skillName.trim()));
+        return skillExecutor.execute(skill, input);
+    }
+
+    /**
      * Called by ChatService — runs all ACTIVE skills for an agent and concatenates results.
      */
     public String executeActiveSkills(String agentId, String input) {
