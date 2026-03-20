@@ -10,14 +10,14 @@ function getCurrentUserId(): string | null {
 }
 
 const MODELS = ['gpt-4.1-mini', 'gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'];
-const TOOL_TYPES = ['KNOWLEDGE_SEARCH', 'WEB_SEARCH', 'CALCULATOR'];
+const SKILL_TYPES = ['KNOWLEDGE_SEARCH', 'WEB_SEARCH', 'CALCULATOR'];
 
 export default function AgentSettingsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
   const [agent, setAgent] = useState<Agent | null>(null);
-  const [enabledTools, setEnabledTools] = useState<string[]>([]);
+  const [enabledSkills, setEnabledSkills] = useState<string[]>([]);
   const [agentEnabled, setAgentEnabled] = useState(true);
   const [status, setStatus] = useState('');
   const [saving, setSaving] = useState(false);
@@ -50,7 +50,7 @@ export default function AgentSettingsPage() {
       setAgentEnabled(a.enabled ?? true);
       setMemoryEnabled(a.memoryEnabled);
       setToolsEnabled(a.toolsEnabled);
-      setEnabledTools(bindings.map((b) => b.toolType));
+      setEnabledSkills(bindings.map((b) => b.toolType));
     }
     void load();
   }, [id]);
@@ -98,7 +98,7 @@ export default function AgentSettingsPage() {
       });
       await apiFetch(`/agents/${id}/tools`, {
         method: 'PUT',
-        body: JSON.stringify(enabledTools),
+        body: JSON.stringify(enabledSkills),
       });
       setStatus('Saved');
     } catch (e) {
@@ -108,9 +108,9 @@ export default function AgentSettingsPage() {
     }
   }
 
-  function toggleTool(tool: string) {
-    setEnabledTools((prev) =>
-      prev.includes(tool) ? prev.filter((t) => t !== tool) : [...prev, tool]
+  function toggleSkill(skill: string) {
+    setEnabledSkills((prev) =>
+      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
     );
   }
 
@@ -162,7 +162,7 @@ export default function AgentSettingsPage() {
       </section>
 
       <section className="rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-6 space-y-4">
-        <h2 className="text-xl font-semibold">Memory & Tools</h2>
+        <h2 className="text-xl font-semibold">Memory & Skills</h2>
 
         <label className="flex items-center gap-3 cursor-pointer">
           <input type="checkbox" checked={memoryEnabled} onChange={(e) => setMemoryEnabled(e.target.checked)} className="h-4 w-4" />
@@ -171,15 +171,15 @@ export default function AgentSettingsPage() {
 
         <label className="flex items-center gap-3 cursor-pointer">
           <input type="checkbox" checked={toolsEnabled} onChange={(e) => setToolsEnabled(e.target.checked)} className="h-4 w-4" />
-          <span>Enable tools</span>
+          <span>Enable skills</span>
         </label>
 
         {toolsEnabled && (
           <div className="space-y-2">
-            <p className="text-sm text-[var(--muted)]">Active tools:</p>
-            {TOOL_TYPES.map((t) => (
+            <p className="text-sm text-[var(--muted)]">Active skills:</p>
+            {SKILL_TYPES.map((t) => (
               <label key={t} className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" checked={enabledTools.includes(t)} onChange={() => toggleTool(t)} className="h-4 w-4" />
+                <input type="checkbox" checked={enabledSkills.includes(t)} onChange={() => toggleSkill(t)} className="h-4 w-4" />
                 <span className="text-sm">{t.replace(/_/g, ' ')}</span>
               </label>
             ))}
