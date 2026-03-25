@@ -6,6 +6,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,7 +31,7 @@ public class OpenAiProvider implements LlmProvider {
     @Override
     public LlmResponse chat(LlmRequest request) {
         if (mockEnabled || apiKey == null || apiKey.isBlank()) {
-            return new LlmResponse("[Mock LLM Reply]\n\n" + request.userPrompt());
+            return new LlmResponse("[Mock LLM Reply] No API key configured. Please set OPENAI_API_KEY.");
         }
 
         Map<String, Object> payload = Map.of(
@@ -84,5 +85,10 @@ public class OpenAiProvider implements LlmProvider {
                 .map(contentMap -> contentMap.get("text")).toString();
 
         return new LlmResponse(result);
+    }
+
+    @Override
+    public List<String> getAvailableModels() {
+        return Arrays.asList("gpt-3.5-turbo");
     }
 }

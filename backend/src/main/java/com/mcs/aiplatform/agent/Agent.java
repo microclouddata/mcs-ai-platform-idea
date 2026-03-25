@@ -21,7 +21,7 @@ public class Agent extends BaseEntity {
     private String description;
     private String systemPrompt;
     private String provider = "OPENAI";
-    private String model = "gpt-4.1-mini";
+    private String model = "gpt-3.5-turbo";
     private Double temperature = 0.2;
     private List<String> tools = new ArrayList<>();
 
