@@ -33,7 +33,7 @@ export default function DashboardPage() {
           description: 'Document Q&A agent',
           systemPrompt: 'You are a helpful assistant. Use the uploaded document context when possible and say when information is not found.',
           provider: 'OPENAI',
-          model: 'gpt-4.1-mini',
+          model: 'gpt-3.5-turbo',
           temperature: 0.2,
           tools: ['KNOWLEDGE_SEARCH'],
         }),

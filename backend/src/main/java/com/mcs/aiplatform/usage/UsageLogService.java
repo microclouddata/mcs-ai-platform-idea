@@ -64,9 +64,6 @@ public class UsageLogService {
 
     // Rough OpenAI pricing per 1M tokens [input, output]
     private static final Map<String, double[]> PRICING = Map.of(
-            "gpt-4o",       new double[]{5.00, 15.00},
-            "gpt-4o-mini",  new double[]{0.15,  0.60},
-            "gpt-4.1-mini", new double[]{0.40,  1.60},
             "gpt-3.5-turbo",new double[]{0.50,  1.50}
     );
 

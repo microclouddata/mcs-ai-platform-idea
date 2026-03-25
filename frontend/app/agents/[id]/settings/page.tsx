@@ -9,8 +9,6 @@ function getCurrentUserId(): string | null {
   return typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
 }
 
-const MODELS = ['gpt-4.1-mini', 'gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'];
-
 export default function AgentSettingsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -20,17 +18,27 @@ export default function AgentSettingsPage() {
   const [status, setStatus] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Available models fetched from backend: { OPENAI: [...], OLLAMA: [...] }
+  const [availableModels, setAvailableModels] = useState<Record<string, string[]>>({});
+
   // Form fields
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [systemPrompt, setSystemPrompt] = useState('');
+  const [provider, setProvider] = useState('OPENAI');
   const [model, setModel] = useState('');
   const [temperature, setTemperature] = useState(0.2);
   const [memoryEnabled, setMemoryEnabled] = useState(false);
 
+  // Models available for the currently selected provider
+  const modelsForProvider = availableModels[provider] ?? [];
+
   useEffect(() => {
     async function load() {
-      const a = await apiFetch<Agent>(`/agents/${id}`);
+      const [a, models] = await Promise.all([
+        apiFetch<Agent>(`/agents/${id}`),
+        apiFetch<Record<string, string[]>>('/models').catch(() => ({})),
+      ]);
       if (a.userId !== getCurrentUserId()) {
         router.replace(`/agents/${id}`);
         return;
@@ -39,13 +47,22 @@ export default function AgentSettingsPage() {
       setName(a.name);
       setDescription(a.description);
       setSystemPrompt(a.systemPrompt);
+      setProvider(a.provider ?? 'OPENAI');
       setModel(a.model);
       setTemperature(a.temperature);
       setAgentEnabled(a.enabled ?? true);
       setMemoryEnabled(a.memoryEnabled);
+      setAvailableModels(models);
     }
     void load();
   }, [id]);
+
+  // When provider changes, reset model to the first available for that provider
+  function handleProviderChange(newProvider: string) {
+    setProvider(newProvider);
+    const models = availableModels[newProvider] ?? [];
+    if (models.length > 0) setModel(models[0]);
+  }
 
   async function toggleDisable() {
     setSaving(true);
@@ -82,6 +99,7 @@ export default function AgentSettingsPage() {
           name,
           description,
           systemPrompt,
+          provider,
           model,
           temperature,
           memoryEnabled,
@@ -130,9 +148,22 @@ export default function AgentSettingsPage() {
         </div>
 
         <div>
+          <label className="mb-1 block text-sm text-[var(--muted)]">Provider</label>
+          <select className="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-[var(--panel)] text-white" value={provider} onChange={(e) => handleProviderChange(e.target.value)}>
+            {Object.keys(availableModels).length > 0
+              ? Object.keys(availableModels).map((p) => <option key={p} value={p}>{p}</option>)
+              : <option value={provider}>{provider}</option>
+            }
+          </select>
+        </div>
+
+        <div>
           <label className="mb-1 block text-sm text-[var(--muted)]">Model</label>
-          <select className="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-transparent" value={model} onChange={(e) => setModel(e.target.value)}>
-            {MODELS.map((m) => <option key={m} value={m}>{m}</option>)}
+          <select className="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-[var(--panel)] text-white" value={model} onChange={(e) => setModel(e.target.value)}>
+            {modelsForProvider.length > 0
+              ? modelsForProvider.map((m) => <option key={m} value={m}>{m}</option>)
+              : <option value={model}>{model}</option>
+            }
           </select>
         </div>
 
