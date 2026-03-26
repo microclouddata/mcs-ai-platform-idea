@@ -18,16 +18,19 @@ import java.util.Map;
 public class Skill extends BaseEntity {
 
     private String agentId;
+
+    // agentskills.md frontmatter fields (always loaded — metadata phase)
     private String name;
     private String description;
-    private String code;
-    private SkillLanguage language = SkillLanguage.PYTHON;
+    private String license;
+    private String compatibility;
+    private Map<String, String> skillMetadata = new LinkedHashMap<>();
+    private List<String> allowedTools = new ArrayList<>();
+
+    // SKILL.md body — loaded when skill is activated
+    private String instructions;
+
+    // Platform fields
     private SkillStatus status = SkillStatus.ACTIVE;
-    private SkillType skillType = SkillType.CODE;
-    private String docId;
-    private List<String> controlFlags = new ArrayList<>();
-    private Map<String, String> metadata = new LinkedHashMap<>();
-    private List<String> tags = new ArrayList<>();
-    private List<SkillParameter> parameters = new ArrayList<>();
     private boolean modelTool = false;
 }

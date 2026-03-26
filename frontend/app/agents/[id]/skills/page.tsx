@@ -12,7 +12,7 @@ function getCurrentUserId(): string | null {
 }
 
 type ViewMode = 'list' | 'create' | 'edit';
-type DetailTab = 'details' | 'code' | 'analytics';
+type DetailTab = 'details' | 'instructions' | 'analytics';
 
 export default function SkillsPage() {
   const { id: agentId } = useParams<{ id: string }>();
@@ -144,7 +144,7 @@ export default function SkillsPage() {
                   </span>
                 </div>
                 <div className="mt-0.5 text-xs text-[var(--muted)] ml-4 truncate">
-                  {skill.language} · {skill.skillType}
+                  {skill.compatibility || 'No compatibility info'}
                 </div>
               </button>
             ))}
@@ -203,7 +203,7 @@ export default function SkillsPage() {
 
               {/* Detail tabs */}
               <div className="flex gap-6 px-6 pt-3 border-b border-[var(--border)] text-sm">
-                {(['details', 'code', 'analytics'] as DetailTab[]).map(t => (
+                {(['details', 'instructions', 'analytics'] as DetailTab[]).map(t => (
                   <button
                     key={t}
                     onClick={() => setDetailTab(t)}
@@ -223,59 +223,30 @@ export default function SkillsPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-6">
                       <div>
-                        <label className="text-xs text-[var(--muted)] uppercase tracking-wider">DOC ID</label>
-                        <p className="mt-1 text-sm text-[var(--foreground)]">{selected.docId || 'NONE'}</p>
+                        <label className="text-xs text-[var(--muted)] uppercase tracking-wider">License</label>
+                        <p className="mt-1 text-sm text-[var(--foreground)]">{selected.license || '—'}</p>
                       </div>
                       <div>
-                        <label className="text-xs text-[var(--muted)] uppercase tracking-wider">Skill type</label>
-                        <p className="mt-1 text-sm text-[var(--foreground)]">{selected.skillType}</p>
+                        <label className="text-xs text-[var(--muted)] uppercase tracking-wider">Compatibility</label>
+                        <p className="mt-1 text-sm text-[var(--foreground)]">{selected.compatibility || '—'}</p>
                       </div>
                     </div>
-                    <div>
-                      <label className="text-xs text-[var(--muted)] uppercase tracking-wider">Control Flags</label>
-                      <p className="mt-1 text-sm text-[var(--foreground)]">
-                        {selected.controlFlags.length > 0 ? selected.controlFlags.join(', ') : 'NONE'}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-xs text-[var(--muted)] uppercase tracking-wider">MetaData</label>
-                      <p className="mt-1 text-sm text-[var(--foreground)]">
-                        {Object.keys(selected.metadata).length > 0
-                          ? Object.entries(selected.metadata).map(([k, v]) => `${k}: ${v}`).join(' · ')
-                          : 'NONE'}
-                      </p>
-                    </div>
-                    {selected.tags.length > 0 && (
+                    {selected.allowedTools && selected.allowedTools.length > 0 && (
                       <div>
-                        <label className="text-xs text-[var(--muted)] uppercase tracking-wider">Tags</label>
+                        <label className="text-xs text-[var(--muted)] uppercase tracking-wider">Allowed Tools</label>
                         <div className="mt-1 flex flex-wrap gap-1">
-                          {selected.tags.map(tag => (
-                            <span key={tag} className="px-2 py-0.5 rounded-full bg-[var(--panel-soft)] border border-[var(--border)] text-xs text-[var(--foreground)]">{tag}</span>
+                          {selected.allowedTools.map(tool => (
+                            <span key={tool} className="px-2 py-0.5 rounded-full bg-[var(--panel-soft)] border border-[var(--border)] text-xs text-[var(--foreground)]">{tool}</span>
                           ))}
                         </div>
                       </div>
                     )}
-                    {selected.parameters.length > 0 && (
+                    {selected.skillMetadata && Object.keys(selected.skillMetadata).length > 0 && (
                       <div>
-                        <label className="text-xs text-[var(--muted)] uppercase tracking-wider">Parameters</label>
-                        <table className="mt-2 w-full text-sm">
-                          <thead>
-                            <tr className="text-left text-xs text-[var(--muted)]">
-                              <th className="pb-1 pr-4">Name</th>
-                              <th className="pb-1 pr-4">Type</th>
-                              <th className="pb-1">Description</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {selected.parameters.map((p, i) => (
-                              <tr key={i} className="border-t border-[var(--border)]">
-                                <td className="py-1.5 pr-4 font-mono text-xs">{p.name}</td>
-                                <td className="py-1.5 pr-4 text-[var(--muted)] text-xs">{p.type}</td>
-                                <td className="py-1.5 text-[var(--muted)] text-xs">{p.description}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                        <label className="text-xs text-[var(--muted)] uppercase tracking-wider">Metadata</label>
+                        <p className="mt-1 text-sm text-[var(--foreground)]">
+                          {Object.entries(selected.skillMetadata).map(([k, v]) => `${k}: ${v}`).join(' · ')}
+                        </p>
                       </div>
                     )}
                     <div className="pt-2">
@@ -289,13 +260,13 @@ export default function SkillsPage() {
                   </div>
                 )}
 
-                {detailTab === 'code' && (
+                {detailTab === 'instructions' && (
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="text-xs text-[var(--muted)] uppercase tracking-wider">{selected.language} Code</span>
+                      <span className="text-xs text-[var(--muted)] uppercase tracking-wider">SKILL.md Instructions</span>
                     </div>
                     <pre className="w-full h-96 bg-[var(--panel-soft)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm font-mono overflow-auto text-[var(--foreground)] whitespace-pre-wrap">
-                      {selected.code || '# No code yet'}
+                      {selected.instructions || '# No instructions yet'}
                     </pre>
                   </div>
                 )}
