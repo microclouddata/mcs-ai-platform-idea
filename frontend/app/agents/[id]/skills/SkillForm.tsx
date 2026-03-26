@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { Skill, SkillStatus } from '@/lib/types';
 
@@ -11,9 +11,96 @@ interface Props {
   onCancel: () => void;
 }
 
+type FileCategory = 'scripts' | 'references' | 'assets';
+
+function FileSection({
+  agentId, skillId, category, label, accept,
+}: { agentId: string; skillId: string; category: FileCategory; label: string; accept?: string }) {
+  const [files, setFiles] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { loadFiles(); }, [skillId, category]);
+
+  async function loadFiles() {
+    try {
+      const data = await apiFetch<string[]>(`/agents/${agentId}/skills/${skillId}/${category}`);
+      setFiles(data);
+    } catch { setFiles([]); }
+  }
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setError('');
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/agents/${agentId}/skills/${skillId}/${category}/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        body: form,
+      });
+      await loadFiles();
+    } catch {
+      setError('Upload failed');
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  }
+
+  async function handleDelete(filename: string) {
+    if (!confirm(`Delete ${filename}?`)) return;
+    try {
+      await apiFetch(`/agents/${agentId}/skills/${skillId}/${category}/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+      setFiles(f => f.filter(x => x !== filename));
+    } catch { setError('Delete failed'); }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-xs text-[var(--muted)] uppercase tracking-wider">{label}</label>
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="text-xs text-[var(--brand)] hover:underline disabled:opacity-50"
+        >
+          {uploading ? 'Uploading…' : '+ Upload'}
+        </button>
+        <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={handleUpload} />
+      </div>
+      {error && <p className="text-xs text-red-400 mb-1">{error}</p>}
+      {files.length === 0
+        ? <p className="text-xs text-[var(--muted)]">No {label.toLowerCase()} uploaded yet.</p>
+        : (
+          <ul className="space-y-1">
+            {files.map(f => (
+              <li key={f} className="flex items-center justify-between bg-[var(--panel-soft)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm">
+                <span className="font-mono text-xs text-[var(--foreground)] truncate">{f}</span>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(f)}
+                  className="ml-3 text-[var(--muted)] hover:text-red-400 text-xs shrink-0"
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+  );
+}
+
 export default function SkillForm({ agentId, initial, onSaved, onCancel }: Props) {
   const isEdit = !!initial;
-  const [tab, setTab] = useState<'details' | 'instructions'>('details');
+  const [tab, setTab] = useState<'details' | 'instructions' | 'files'>('details');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -98,7 +185,7 @@ export default function SkillForm({ agentId, initial, onSaved, onCancel }: Props
 
       {/* Tabs */}
       <div className="flex gap-6 px-6 pt-3 border-b border-[var(--border)] text-sm">
-        {(['details', 'instructions'] as const).map(t => (
+        {(['details', 'instructions', ...(isEdit ? ['files' as const] : [])] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -249,6 +336,14 @@ export default function SkillForm({ agentId, initial, onSaved, onCancel }: Props
             <p className="mt-2 text-xs text-[var(--muted)]">
               This content is injected into the LLM context when this skill is active.
             </p>
+          </div>
+        )}
+
+        {tab === 'files' && initial && (
+          <div className="space-y-8">
+            <FileSection agentId={agentId} skillId={initial.id} category="scripts" label="Scripts" accept=".py,.js,.java,.sh,.ts" />
+            <FileSection agentId={agentId} skillId={initial.id} category="references" label="References" accept=".md,.txt,.json,.yaml,.yml" />
+            <FileSection agentId={agentId} skillId={initial.id} category="assets" label="Assets" />
           </div>
         )}
       </div>

@@ -3,8 +3,13 @@ package com.mcs.aiplatform.skill;
 import com.mcs.aiplatform.common.ApiResponse;
 import com.mcs.aiplatform.config.CurrentUser;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -99,6 +104,17 @@ public class SkillController {
         return ApiResponse.ok(null);
     }
 
+    @PostMapping(value = "/{skillId}/scripts/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<String> uploadScript(
+            @PathVariable String agentId,
+            @PathVariable String skillId,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        skillService.get(CurrentUser.userId(), agentId, skillId);
+        String filename = file.getOriginalFilename();
+        skillFileService.saveScript(skillId, filename, new String(file.getBytes()));
+        return ApiResponse.ok(filename);
+    }
+
     // --- References ---
 
     @GetMapping("/{skillId}/references")
@@ -139,6 +155,17 @@ public class SkillController {
         return ApiResponse.ok(null);
     }
 
+    @PostMapping(value = "/{skillId}/references/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<String> uploadReference(
+            @PathVariable String agentId,
+            @PathVariable String skillId,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        skillService.get(CurrentUser.userId(), agentId, skillId);
+        String filename = file.getOriginalFilename();
+        skillFileService.saveReference(skillId, filename, new String(file.getBytes()));
+        return ApiResponse.ok(filename);
+    }
+
     // --- Assets ---
 
     @GetMapping("/{skillId}/assets")
@@ -157,5 +184,29 @@ public class SkillController {
         skillService.get(CurrentUser.userId(), agentId, skillId);
         skillFileService.deleteAsset(skillId, filename);
         return ApiResponse.ok(null);
+    }
+
+    @PostMapping(value = "/{skillId}/assets/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<String> uploadAsset(
+            @PathVariable String agentId,
+            @PathVariable String skillId,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        skillService.get(CurrentUser.userId(), agentId, skillId);
+        String filename = file.getOriginalFilename();
+        skillFileService.saveAsset(skillId, filename, file.getBytes());
+        return ApiResponse.ok(filename);
+    }
+
+    @GetMapping("/{skillId}/assets/{filename}")
+    public ResponseEntity<byte[]> downloadAsset(
+            @PathVariable String agentId,
+            @PathVariable String skillId,
+            @PathVariable String filename) {
+        skillService.get(CurrentUser.userId(), agentId, skillId);
+        byte[] data = skillFileService.readAsset(skillId, filename);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                .body(data);
     }
 }
