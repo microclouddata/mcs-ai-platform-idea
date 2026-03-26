@@ -13,6 +13,9 @@ import java.util.List;
 public class SkillController {
 
     private final SkillService skillService;
+    private final SkillFileService skillFileService;
+
+    // --- CRUD ---
 
     @GetMapping
     public ApiResponse<List<Skill>> list(@PathVariable String agentId) {
@@ -56,11 +59,103 @@ public class SkillController {
         return ApiResponse.ok(skillService.toggleStatus(CurrentUser.userId(), agentId, skillId));
     }
 
-    @PostMapping("/{skillId}/execute")
-    public ApiResponse<String> execute(
+    // --- Scripts ---
+
+    @GetMapping("/{skillId}/scripts")
+    public ApiResponse<List<String>> listScripts(
+            @PathVariable String agentId,
+            @PathVariable String skillId) {
+        skillService.get(CurrentUser.userId(), agentId, skillId);
+        return ApiResponse.ok(skillFileService.listScripts(skillId));
+    }
+
+    @GetMapping("/{skillId}/scripts/{filename}")
+    public ApiResponse<String> getScript(
             @PathVariable String agentId,
             @PathVariable String skillId,
-            @RequestBody ExecuteSkillRequest req) {
-        return ApiResponse.ok(skillService.execute(CurrentUser.userId(), agentId, skillId, req.input()));
+            @PathVariable String filename) {
+        skillService.get(CurrentUser.userId(), agentId, skillId);
+        return ApiResponse.ok(skillFileService.readScript(skillId, filename));
+    }
+
+    @PostMapping("/{skillId}/scripts/{filename}")
+    public ApiResponse<Void> saveScript(
+            @PathVariable String agentId,
+            @PathVariable String skillId,
+            @PathVariable String filename,
+            @RequestBody String content) {
+        skillService.get(CurrentUser.userId(), agentId, skillId);
+        skillFileService.saveScript(skillId, filename, content);
+        return ApiResponse.ok(null);
+    }
+
+    @DeleteMapping("/{skillId}/scripts/{filename}")
+    public ApiResponse<Void> deleteScript(
+            @PathVariable String agentId,
+            @PathVariable String skillId,
+            @PathVariable String filename) {
+        skillService.get(CurrentUser.userId(), agentId, skillId);
+        skillFileService.deleteScript(skillId, filename);
+        return ApiResponse.ok(null);
+    }
+
+    // --- References ---
+
+    @GetMapping("/{skillId}/references")
+    public ApiResponse<List<String>> listReferences(
+            @PathVariable String agentId,
+            @PathVariable String skillId) {
+        skillService.get(CurrentUser.userId(), agentId, skillId);
+        return ApiResponse.ok(skillFileService.listReferences(skillId));
+    }
+
+    @GetMapping("/{skillId}/references/{filename}")
+    public ApiResponse<String> getReference(
+            @PathVariable String agentId,
+            @PathVariable String skillId,
+            @PathVariable String filename) {
+        skillService.get(CurrentUser.userId(), agentId, skillId);
+        return ApiResponse.ok(skillFileService.readReference(skillId, filename));
+    }
+
+    @PostMapping("/{skillId}/references/{filename}")
+    public ApiResponse<Void> saveReference(
+            @PathVariable String agentId,
+            @PathVariable String skillId,
+            @PathVariable String filename,
+            @RequestBody String content) {
+        skillService.get(CurrentUser.userId(), agentId, skillId);
+        skillFileService.saveReference(skillId, filename, content);
+        return ApiResponse.ok(null);
+    }
+
+    @DeleteMapping("/{skillId}/references/{filename}")
+    public ApiResponse<Void> deleteReference(
+            @PathVariable String agentId,
+            @PathVariable String skillId,
+            @PathVariable String filename) {
+        skillService.get(CurrentUser.userId(), agentId, skillId);
+        skillFileService.deleteReference(skillId, filename);
+        return ApiResponse.ok(null);
+    }
+
+    // --- Assets ---
+
+    @GetMapping("/{skillId}/assets")
+    public ApiResponse<List<String>> listAssets(
+            @PathVariable String agentId,
+            @PathVariable String skillId) {
+        skillService.get(CurrentUser.userId(), agentId, skillId);
+        return ApiResponse.ok(skillFileService.listAssets(skillId));
+    }
+
+    @DeleteMapping("/{skillId}/assets/{filename}")
+    public ApiResponse<Void> deleteAsset(
+            @PathVariable String agentId,
+            @PathVariable String skillId,
+            @PathVariable String filename) {
+        skillService.get(CurrentUser.userId(), agentId, skillId);
+        skillFileService.deleteAsset(skillId, filename);
+        return ApiResponse.ok(null);
     }
 }

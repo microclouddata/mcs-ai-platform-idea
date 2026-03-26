@@ -6,15 +6,12 @@ import java.util.Map;
 public record UpdateSkillRequest(
         String name,
         String description,
-        String code,
-        SkillLanguage language,
+        String license,
+        String compatibility,
+        Map<String, String> skillMetadata,
+        List<String> allowedTools,
+        String instructions,
         SkillStatus status,
-        SkillType skillType,
-        String docId,
-        List<String> controlFlags,
-        Map<String, String> metadata,
-        List<String> tags,
-        List<SkillParameter> parameters,
         Boolean modelTool
 ) {
 }

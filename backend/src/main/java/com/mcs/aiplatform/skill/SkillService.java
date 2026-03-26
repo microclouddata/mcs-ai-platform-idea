@@ -16,7 +16,7 @@ public class SkillService {
 
     private final SkillRepository skillRepository;
     private final AgentService agentService;
-    private final SkillExecutor skillExecutor;
+    private final SkillFileService skillFileService;
 
     public List<Skill> list(String userId, String agentId) {
         validateOwner(userId, agentId);
@@ -33,23 +33,22 @@ public class SkillService {
         validateOwner(userId, agentId);
         Skill skill = new Skill();
         skill.setAgentId(agentId);
-        applyRequest(skill, req.name(), req.description(), req.code(), req.language(),
-                req.status(), req.skillType(), req.docId(), req.controlFlags(),
-                req.metadata(), req.tags(), req.parameters(), req.modelTool());
-        return skillRepository.save(skill);
+        applyRequest(skill, req);
+        Skill saved = skillRepository.save(skill);
+        skillFileService.initSkillDirectory(saved.getId());
+        return saved;
     }
 
     public Skill update(String userId, String agentId, String skillId, UpdateSkillRequest req) {
         Skill skill = get(userId, agentId, skillId);
-        applyRequest(skill, req.name(), req.description(), req.code(), req.language(),
-                req.status(), req.skillType(), req.docId(), req.controlFlags(),
-                req.metadata(), req.tags(), req.parameters(), req.modelTool());
+        applyUpdateRequest(skill, req);
         return skillRepository.save(skill);
     }
 
     public void delete(String userId, String agentId, String skillId) {
         Skill skill = get(userId, agentId, skillId);
         skillRepository.deleteById(skill.getId());
+        skillFileService.deleteSkillDirectory(skill.getId());
     }
 
     public Skill toggleStatus(String userId, String agentId, String skillId) {
@@ -58,23 +57,21 @@ public class SkillService {
         return skillRepository.save(skill);
     }
 
-    public String execute(String userId, String agentId, String skillId, String input) {
-        Skill skill = get(userId, agentId, skillId);
-        return skillExecutor.execute(skill, input);
-    }
-
     /**
      * Called by ChatService when the user types "call <skill name>" in chat.
-     * Looks up the skill by name (case-insensitive) and executes it directly.
+     * Returns the skill's instructions as context.
      */
     public String executeByName(String agentId, String skillName, String input) {
         Skill skill = skillRepository.findByAgentIdAndNameIgnoreCase(agentId, skillName.trim())
                 .orElseThrow(() -> new IllegalArgumentException("Skill not found: " + skillName.trim()));
-        return skillExecutor.execute(skill, input);
+        String instructions = skill.getInstructions();
+        return (instructions != null && !instructions.isBlank()) ? instructions : "(No instructions defined for skill: " + skill.getName() + ")";
     }
 
     /**
-     * Called by ChatService — runs all ACTIVE skills for an agent and concatenates results.
+     * Called by ChatService — returns instructions of all ACTIVE skills as LLM context.
+     * Metadata (name, description) is already available from the MongoDB document.
+     * Instructions are the SKILL.md body, loaded here on activation.
      */
     public String executeActiveSkills(String agentId, String input) {
         List<Skill> active = skillRepository.findByAgentIdAndStatus(agentId, SkillStatus.ACTIVE);
@@ -82,14 +79,10 @@ public class SkillService {
 
         StringBuilder results = new StringBuilder();
         for (Skill skill : active) {
-            try {
-                String result = skillExecutor.execute(skill, input);
-                if (result != null && !result.isBlank()) {
-                    results.append("[SKILL: ").append(skill.getName()).append("]\n")
-                            .append(result).append("\n\n");
-                }
-            } catch (Exception e) {
-                log.warn("Skill '{}' failed for agent {}: {}", skill.getName(), agentId, e.getMessage());
+            String instructions = skill.getInstructions();
+            if (instructions != null && !instructions.isBlank()) {
+                results.append("[SKILL: ").append(skill.getName()).append("]\n")
+                        .append(instructions).append("\n\n");
             }
         }
         return results.toString().trim();
@@ -99,22 +92,27 @@ public class SkillService {
         agentService.get(userId, agentId);
     }
 
-    private void applyRequest(Skill skill, String name, String description, String code,
-                              SkillLanguage language, SkillStatus status, SkillType skillType,
-                              String docId, List<String> controlFlags,
-                              java.util.Map<String, String> metadata, List<String> tags,
-                              List<SkillParameter> parameters, Boolean modelTool) {
-        if (name != null) skill.setName(name);
-        if (description != null) skill.setDescription(description);
-        if (code != null) skill.setCode(code);
-        if (language != null) skill.setLanguage(language);
-        if (status != null) skill.setStatus(status);
-        if (skillType != null) skill.setSkillType(skillType);
-        if (docId != null) skill.setDocId(docId);
-        if (controlFlags != null) skill.setControlFlags(new ArrayList<>(controlFlags));
-        if (metadata != null) skill.setMetadata(new LinkedHashMap<>(metadata));
-        if (tags != null) skill.setTags(new ArrayList<>(tags));
-        if (parameters != null) skill.setParameters(new ArrayList<>(parameters));
-        if (modelTool != null) skill.setModelTool(modelTool);
+    private void applyRequest(Skill skill, CreateSkillRequest req) {
+        if (req.name() != null) skill.setName(req.name());
+        if (req.description() != null) skill.setDescription(req.description());
+        if (req.license() != null) skill.setLicense(req.license());
+        if (req.compatibility() != null) skill.setCompatibility(req.compatibility());
+        if (req.skillMetadata() != null) skill.setSkillMetadata(new LinkedHashMap<>(req.skillMetadata()));
+        if (req.allowedTools() != null) skill.setAllowedTools(new ArrayList<>(req.allowedTools()));
+        if (req.instructions() != null) skill.setInstructions(req.instructions());
+        if (req.status() != null) skill.setStatus(req.status());
+        if (req.modelTool() != null) skill.setModelTool(req.modelTool());
+    }
+
+    private void applyUpdateRequest(Skill skill, UpdateSkillRequest req) {
+        if (req.name() != null) skill.setName(req.name());
+        if (req.description() != null) skill.setDescription(req.description());
+        if (req.license() != null) skill.setLicense(req.license());
+        if (req.compatibility() != null) skill.setCompatibility(req.compatibility());
+        if (req.skillMetadata() != null) skill.setSkillMetadata(new LinkedHashMap<>(req.skillMetadata()));
+        if (req.allowedTools() != null) skill.setAllowedTools(new ArrayList<>(req.allowedTools()));
+        if (req.instructions() != null) skill.setInstructions(req.instructions());
+        if (req.status() != null) skill.setStatus(req.status());
+        if (req.modelTool() != null) skill.setModelTool(req.modelTool());
     }
 }

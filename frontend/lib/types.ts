@@ -130,30 +130,19 @@ export interface Integration {
 }
 
 // Skill types
-export type SkillLanguage = 'JAVASCRIPT' | 'PYTHON' | 'JAVA';
 export type SkillStatus = 'ACTIVE' | 'INACTIVE';
-export type SkillType = 'CODE';
-
-export interface SkillParameter {
-  name: string;
-  type: string;
-  description: string;
-}
 
 export interface Skill {
   id: string;
   agentId: string;
   name: string;
-  description: string;
-  code: string;
-  language: SkillLanguage;
+  description?: string;
+  license?: string;
+  compatibility?: string;
+  skillMetadata?: Record<string, string>;
+  allowedTools?: string[];
+  instructions?: string;
   status: SkillStatus;
-  skillType: SkillType;
-  docId?: string;
-  controlFlags: string[];
-  metadata: Record<string, string>;
-  tags: string[];
-  parameters: SkillParameter[];
   modelTool: boolean;
   createdAt?: string;
 }
