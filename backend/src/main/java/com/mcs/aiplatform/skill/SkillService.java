@@ -58,6 +58,19 @@ public class SkillService {
     }
 
     /**
+     * Called by ChatService when the user selects a specific skill in the chat UI.
+     */
+    public String executeById(String agentId, String skillId) {
+        Skill skill = skillRepository.findByIdAndAgentId(skillId, agentId)
+                .orElseThrow(() -> new IllegalArgumentException("Skill not found: " + skillId));
+        if (skill.getStatus() != SkillStatus.ACTIVE) return "";
+        String instructions = skill.getInstructions();
+        return (instructions != null && !instructions.isBlank())
+                ? "[SKILL: " + skill.getName() + "]\n" + instructions
+                : "";
+    }
+
+    /**
      * Called by ChatService when the user types "call <skill name>" in chat.
      * Returns the skill's instructions as context.
      */

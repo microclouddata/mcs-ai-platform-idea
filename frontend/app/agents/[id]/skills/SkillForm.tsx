@@ -110,7 +110,6 @@ export default function SkillForm({ agentId, initial, onSaved, onCancel }: Props
   const [license, setLicense] = useState(initial?.license ?? '');
   const [compatibility, setCompatibility] = useState(initial?.compatibility ?? '');
   const [status, setStatus] = useState<SkillStatus>(initial?.status ?? 'ACTIVE');
-  const [modelTool, setModelTool] = useState(initial?.modelTool ?? false);
   const [instructions, setInstructions] = useState(initial?.instructions ?? '');
 
   // skillMetadata key-value pairs
@@ -135,7 +134,6 @@ export default function SkillForm({ agentId, initial, onSaved, onCancel }: Props
         allowedTools: allowedTools.filter(Boolean),
         instructions: instructions || null,
         status,
-        modelTool,
       };
       const path = isEdit ? `/agents/${agentId}/skills/${initial!.id}` : `/agents/${agentId}/skills`;
       const saved = await apiFetch<Skill>(path, {
@@ -161,17 +159,6 @@ export default function SkillForm({ agentId, initial, onSaved, onCancel }: Props
           onChange={e => setName(e.target.value)}
         />
         <div className="flex items-center gap-3 ml-4 shrink-0">
-          <label className="flex items-center gap-2 text-sm text-[var(--muted)] cursor-pointer">
-            <span>Model Tool:</span>
-            <button
-              type="button"
-              onClick={() => setModelTool(v => !v)}
-              className={`relative w-10 h-5 rounded-full transition-colors ${modelTool ? 'bg-[var(--brand)]' : 'bg-[var(--border)]'}`}
-            >
-              <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${modelTool ? 'translate-x-5' : ''}`} />
-            </button>
-            <span className={modelTool ? 'text-[var(--brand)]' : ''}>{modelTool ? 'ON' : 'OFF'}</span>
-          </label>
           <button onClick={onCancel} className="px-4 py-1.5 text-sm rounded-lg border border-[var(--border)] hover:bg-[var(--panel-soft)]">Close</button>
           <button
             onClick={handleSave}

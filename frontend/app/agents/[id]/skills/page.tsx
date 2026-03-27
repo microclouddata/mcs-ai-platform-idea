@@ -106,9 +106,6 @@ export default function SkillsPage() {
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
             <span className="text-sm font-semibold text-[var(--foreground)]">Skills</span>
             <div className="flex gap-2">
-              {/* Language icons */}
-              <span className="text-xs px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 font-mono">JS</span>
-              <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-mono">Py</span>
               <button
                 onClick={() => { setSelected(null); setMode('create'); }}
                 className="text-xs px-3 py-0.5 rounded-lg bg-[var(--brand)] text-white hover:opacity-90"

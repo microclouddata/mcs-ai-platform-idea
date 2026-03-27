@@ -4,7 +4,7 @@ import { ChangeEvent, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
-import { Agent, ChatMessage, ChatResponse, DocumentFile } from '@/lib/types';
+import { Agent, ChatMessage, ChatResponse, DocumentFile, Skill } from '@/lib/types';
 
 export default function AgentDetailPage() {
   const params = useParams();
@@ -19,6 +19,8 @@ export default function AgentDetailPage() {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState('');
   const [saving, setSaving] = useState(false);
+  const [activeSkills, setActiveSkills] = useState<Skill[]>([]);
+  const [selectedSkillId, setSelectedSkillId] = useState<string>('');
 
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080/api';
 
@@ -33,6 +35,13 @@ export default function AgentDetailPage() {
   async function loadDocuments() {
     const data = await apiFetch<DocumentFile[]>(`/documents?agentId=${agentId}`);
     setDocuments(data);
+  }
+
+  async function loadActiveSkills() {
+    try {
+      const all = await apiFetch<Skill[]>(`/agents/${agentId}/skills`);
+      setActiveSkills(all.filter(s => s.status === 'ACTIVE'));
+    } catch { /* skills not critical for chat */ }
   }
 
   function downloadDocument(doc: DocumentFile) {
@@ -74,7 +83,7 @@ export default function AgentDetailPage() {
     try {
       const response = await apiFetch<ChatResponse>('/chat', {
         method: 'POST',
-        body: JSON.stringify({ agentId, sessionId, message }),
+        body: JSON.stringify({ agentId, sessionId, message, skillId: selectedSkillId || null }),
       });
       setSessionId(response.sessionId);
       const history = await apiFetch<ChatMessage[]>(`/chat/history/${response.sessionId}`);
@@ -114,7 +123,10 @@ export default function AgentDetailPage() {
   useEffect(() => {
     async function init() {
       const owner = await loadAgent();
-      if (owner) void loadDocuments();
+      if (owner) {
+        void loadDocuments();
+        void loadActiveSkills();
+      }
     }
     void init();
   }, [agentId]);
@@ -140,6 +152,22 @@ export default function AgentDetailPage() {
         className="mb-3 w-full rounded-2xl border border-slate-300 px-4 py-3"
         placeholder="Ask a question about your uploaded files"
       />
+      {activeSkills.length > 0 && (
+        <div className="mb-3 flex items-center gap-2">
+          <label className="text-xs text-[var(--muted)] shrink-0">Skill:</label>
+          <select
+            value={selectedSkillId}
+            onChange={e => setSelectedSkillId(e.target.value)}
+            className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] px-3 py-1.5 text-sm text-[var(--foreground)]"
+          >
+            <option value="">All active skills</option>
+            <option value="__none__">No skill</option>
+            {activeSkills.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-[var(--muted)]">{status}</p>
         <button disabled={saving} className="rounded-2xl bg-[var(--brand)] px-5 py-3 font-semibold text-slate-950 disabled:opacity-50" onClick={sendMessage}>

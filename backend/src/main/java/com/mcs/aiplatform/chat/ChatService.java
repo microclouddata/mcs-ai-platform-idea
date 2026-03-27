@@ -77,8 +77,15 @@ public class ChatService {
             } else {
                 toolContext = toolOutput;
             }
-            // Append skill results
-            String skillOutput = skillService.executeActiveSkills(agent.getId(), request.message());
+            // Append skill results — use selected skill, skip all, or use all active skills
+            String skillOutput;
+            if ("__none__".equals(request.skillId())) {
+                skillOutput = "";
+            } else if (request.skillId() != null && !request.skillId().isBlank()) {
+                skillOutput = skillService.executeById(agent.getId(), request.skillId());
+            } else {
+                skillOutput = skillService.executeActiveSkills(agent.getId(), request.message());
+            }
             if (!skillOutput.isBlank()) {
                 toolContext = toolContext.isBlank() ? skillOutput : toolContext + "\n\n" + skillOutput;
             }
