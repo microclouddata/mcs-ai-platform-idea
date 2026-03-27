@@ -14,7 +14,7 @@ spring:
 
 app:
   cors:
-    allowed-origins: http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001
+    allowed-origins: http://localhost:3000,http://127.0.0.1:3000,http://73.197.30.143:3000/
   jwt:
     secret: change-this-to-a-very-long-random-secret-key-at-least-32-bytes
     expiration-ms: 86400000
