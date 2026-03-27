@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, useEffect, useState } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
@@ -21,6 +21,8 @@ export default function AgentDetailPage() {
   const [saving, setSaving] = useState(false);
   const [activeSkills, setActiveSkills] = useState<Skill[]>([]);
   const [selectedSkillId, setSelectedSkillId] = useState<string>('');
+  const [chatFiles, setChatFiles] = useState<File[]>([]);
+  const chatFileInputRef = useRef<HTMLInputElement>(null);
 
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080/api';
 
@@ -81,14 +83,33 @@ export default function AgentDetailPage() {
     setSaving(true);
     setStatus('Thinking...');
     try {
-      const response = await apiFetch<ChatResponse>('/chat', {
-        method: 'POST',
-        body: JSON.stringify({ agentId, sessionId, message, skillId: selectedSkillId || null }),
-      });
+      let response: ChatResponse;
+      if (chatFiles.length > 0) {
+        const form = new FormData();
+        form.append('agentId', agentId);
+        if (sessionId) form.append('sessionId', sessionId);
+        form.append('message', message);
+        if (selectedSkillId) form.append('skillId', selectedSkillId);
+        chatFiles.forEach(f => form.append('files', f));
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        const res = await fetch(`${API_BASE}/chat`, {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: form,
+        });
+        const json = await res.json();
+        response = json.data;
+      } else {
+        response = await apiFetch<ChatResponse>('/chat', {
+          method: 'POST',
+          body: JSON.stringify({ agentId, sessionId, message, skillId: selectedSkillId || null }),
+        });
+      }
       setSessionId(response.sessionId);
       const history = await apiFetch<ChatMessage[]>(`/chat/history/${response.sessionId}`);
       setMessages(history);
       setMessage('');
+      setChatFiles([]);
       setStatus('Done');
     } catch (e) {
       setStatus(e instanceof Error ? e.message : 'Send failed');
@@ -145,12 +166,42 @@ export default function AgentDetailPage() {
           ))}
         </div>
       </div>
+      {/* Attached file chips */}
+      {chatFiles.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-2">
+          {chatFiles.map((f, i) => (
+            <div key={i} className="flex items-center gap-1.5 rounded-xl bg-[var(--panel-soft)] border border-[var(--border)] px-3 py-1 text-xs text-[var(--foreground)]">
+              <span className="text-[var(--muted)]">{f.type.startsWith('image/') ? '🖼' : '📄'}</span>
+              <span className="max-w-[120px] truncate">{f.name}</span>
+              <button
+                type="button"
+                onClick={() => setChatFiles(prev => prev.filter((_, j) => j !== i))}
+                className="ml-1 text-[var(--muted)] hover:text-red-400"
+              >×</button>
+            </div>
+          ))}
+        </div>
+      )}
       <textarea
         value={message}
         onChange={(e) => setMessage(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
         rows={5}
         className="mb-3 w-full rounded-2xl border border-slate-300 px-4 py-3"
         placeholder="Ask a question about your uploaded files"
+      />
+      {/* Hidden file input for chat attachments */}
+      <input
+        ref={chatFileInputRef}
+        type="file"
+        multiple
+        accept=".txt,.md,.pdf,.json,.csv,.xml,.yaml,.yml,.js,.ts,.java,.py,.png,.jpg,.jpeg,.gif,.webp"
+        className="hidden"
+        onChange={(e) => {
+          const selected = Array.from(e.target.files ?? []);
+          setChatFiles(prev => [...prev, ...selected]);
+          e.target.value = '';
+        }}
       />
       {activeSkills.length > 0 && (
         <div className="mb-3 flex items-center gap-2">
@@ -169,7 +220,19 @@ export default function AgentDetailPage() {
         </div>
       )}
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-[var(--muted)]">{status}</p>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => chatFileInputRef.current?.click()}
+            className="rounded-xl p-2 text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--panel-soft)] transition-colors"
+            title="Add files or photos"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+            </svg>
+          </button>
+          <p className="text-sm text-[var(--muted)]">{status}</p>
+        </div>
         <button disabled={saving} className="rounded-2xl bg-[var(--brand)] px-5 py-3 font-semibold text-slate-950 disabled:opacity-50" onClick={sendMessage}>
           Send
         </button>

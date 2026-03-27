@@ -12,11 +12,22 @@ import java.nio.charset.StandardCharsets;
 @Service
 public class TextExtractorService {
 
+    private static final java.util.Set<String> TEXT_EXTENSIONS = java.util.Set.of(
+            ".txt", ".md", ".json", ".csv", ".xml", ".yaml", ".yml",
+            ".html", ".htm", ".js", ".ts", ".java", ".py", ".sh", ".sql"
+    );
+
+    private static final java.util.Set<String> IMAGE_EXTENSIONS = java.util.Set.of(
+            ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".svg"
+    );
+
     public String extractText(MultipartFile file) throws IOException {
         String fileName = file.getOriginalFilename() == null ? "" : file.getOriginalFilename().toLowerCase();
 
-        if (fileName.endsWith(".txt") || fileName.endsWith(".md")) {
-            return new String(file.getBytes(), StandardCharsets.UTF_8);
+        for (String ext : TEXT_EXTENSIONS) {
+            if (fileName.endsWith(ext)) {
+                return new String(file.getBytes(), StandardCharsets.UTF_8);
+            }
         }
 
         if (fileName.endsWith(".pdf")) {
@@ -26,6 +37,13 @@ public class TextExtractorService {
             }
         }
 
-        throw new RuntimeException("Unsupported file type: " + fileName);
+        for (String ext : IMAGE_EXTENSIONS) {
+            if (fileName.endsWith(ext)) {
+                return "[Image attached: " + file.getOriginalFilename() + " (" + (file.getSize() / 1024) + " KB)]";
+            }
+        }
+
+        // fallback: try reading as UTF-8 text
+        return new String(file.getBytes(), StandardCharsets.UTF_8);
     }
 }
