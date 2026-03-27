@@ -34,8 +34,8 @@ This project keeps **Spring Boot backend** and **Next.js + Tailwind frontend** i
 
 Backend runs on:
 
-- `http://localhost:8080`
-- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+- `http://localhost:8081`
+- Swagger UI: `http://localhost:8081/swagger-ui/index.html`
 
 ## Run frontend
 

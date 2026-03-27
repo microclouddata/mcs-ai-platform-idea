@@ -29,8 +29,7 @@ export default function NavBar() {
           <Link href="/usage" className="hover:text-white transition-colors">Usage</Link>
           <Link href="/organization" className="hover:text-white transition-colors">Organization</Link>
           <Link href="/billing" className="hover:text-white transition-colors">Billing</Link>
-          <Link href="/integrations" className="hover:text-white transition-colors">Integrations</Link>
-          <Link href="/admin" className="hover:text-white transition-colors">Admin</Link>
+<Link href="/admin" className="hover:text-white transition-colors">Admin</Link>
           <button onClick={handleLogout} className="hover:text-white transition-colors">
             Log out
           </button>
