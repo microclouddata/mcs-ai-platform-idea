@@ -80,7 +80,6 @@ export type UsageStatsResponse = {
 
 export type OrgRole = 'OWNER' | 'ADMIN' | 'MEMBER';
 export type PlanType = 'FREE' | 'PRO' | 'ENTERPRISE';
-export type IntegrationType = 'SLACK' | 'WHATSAPP' | 'EMAIL' | 'WEBHOOK' | 'GOOGLE_DRIVE' | 'NOTION' | 'CONFLUENCE' | 'CRM';
 
 export interface Organization {
   id: string;
@@ -118,16 +117,6 @@ export interface PlanLimits {
   maxDocuments: number;
 }
 
-export interface Integration {
-  id: string;
-  userId: string;
-  type: IntegrationType;
-  name: string;
-  config: Record<string, string>;
-  enabled: boolean;
-  lastTriggeredAt?: string;
-  createdAt?: string;
-}
 
 // Skill types
 export type SkillStatus = 'ACTIVE' | 'INACTIVE';
