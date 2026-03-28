@@ -33,7 +33,7 @@ export default function UsagePage() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-semibold">Usage & Cost</h1>
-      {error ? <p className="text-red-300">{error}</p> : null}
+      {error ? <p className="text-red-600">{error}</p> : null}
 
       {stats && (
         <>

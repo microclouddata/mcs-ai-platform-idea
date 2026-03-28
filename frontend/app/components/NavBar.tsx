@@ -22,22 +22,30 @@ export default function NavBar() {
   }
 
   return (
-    <nav className="flex flex-wrap gap-4 text-sm text-[var(--muted)]">
+    <nav className="flex items-center gap-6 text-sm text-[var(--muted)]">
       {isLoggedIn ? (
         <>
-          <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
-          <Link href="/usage" className="hover:text-white transition-colors">Usage</Link>
-          <Link href="/organization" className="hover:text-white transition-colors">Organization</Link>
-          <Link href="/billing" className="hover:text-white transition-colors">Billing</Link>
-<Link href="/admin" className="hover:text-white transition-colors">Admin</Link>
-          <button onClick={handleLogout} className="hover:text-white transition-colors">
+          <Link href="/dashboard" className="hover:text-[var(--text)] transition-colors">Dashboard</Link>
+          <Link href="/usage" className="hover:text-[var(--text)] transition-colors">Usage</Link>
+          <Link href="/organization" className="hover:text-[var(--text)] transition-colors">Organization</Link>
+          <Link href="/billing" className="hover:text-[var(--text)] transition-colors">Billing</Link>
+          <Link href="/admin" className="hover:text-[var(--text)] transition-colors">Admin</Link>
+          <button
+            onClick={handleLogout}
+            className="rounded-full border border-[var(--border)] px-5 py-2 text-sm font-medium text-[var(--text)] hover:bg-[var(--panel-soft)] transition-colors"
+          >
             Log out
           </button>
         </>
       ) : (
         <>
-          <Link href="/login">Login</Link>
-          <Link href="/register">Register</Link>
+          <Link href="/login" className="hover:text-[var(--text)] transition-colors">Login</Link>
+          <Link
+            href="/register"
+            className="rounded-full bg-[var(--brand)] px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+          >
+            Get Started
+          </Link>
         </>
       )}
     </nav>

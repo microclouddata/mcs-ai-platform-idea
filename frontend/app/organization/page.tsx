@@ -73,7 +73,7 @@ export default function OrganizationPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-semibold">Organizations</h1>
-      {error && <p className="text-red-300 text-sm">{error}</p>}
+      {error && <p className="text-red-600 text-sm">{error}</p>}
       {success && <p className="text-green-400 text-sm">{success}</p>}
 
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
@@ -83,7 +83,7 @@ export default function OrganizationPage() {
             <h2 className="text-lg font-semibold">Create Organization</h2>
             <input className="w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm" value={name} onChange={e => setName(e.target.value)} placeholder="Name" />
             <input className="w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm" value={description} onChange={e => setDescription(e.target.value)} placeholder="Description (optional)" />
-            <button onClick={createOrg} className="w-full rounded-2xl bg-[var(--brand)] py-2.5 text-sm font-semibold text-slate-950">Create</button>
+            <button onClick={createOrg} className="w-full rounded-2xl bg-[var(--brand)] py-2.5 text-sm font-semibold text-white">Create</button>
           </section>
 
           <section className="rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-5 space-y-2">
@@ -120,7 +120,7 @@ export default function OrganizationPage() {
                   <option value="MEMBER">Member</option>
                   <option value="ADMIN">Admin</option>
                 </select>
-                <button onClick={invite} className="rounded-2xl bg-[var(--brand)] px-5 py-2.5 text-sm font-semibold text-slate-950">Invite</button>
+                <button onClick={invite} className="rounded-2xl bg-[var(--brand)] px-5 py-2.5 text-sm font-semibold text-white">Invite</button>
               </div>
             </section>
 
@@ -136,7 +136,7 @@ export default function OrganizationPage() {
                     <div className="flex items-center gap-3">
                       <span className={`text-xs font-semibold ${ROLE_COLOR[m.role]}`}>{m.role}</span>
                       {m.role !== 'OWNER' && (
-                        <button onClick={() => removeMember(m.userId)} className="text-xs text-red-400 hover:text-red-300">Remove</button>
+                        <button onClick={() => removeMember(m.userId)} className="text-xs text-red-400 hover:text-red-600">Remove</button>
                       )}
                     </div>
                   </div>

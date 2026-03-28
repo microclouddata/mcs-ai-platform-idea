@@ -106,7 +106,7 @@ export default function BillingPage() {
               <button
                 disabled={isCurrent || upgrading}
                 onClick={() => upgrade(plan.type)}
-                className={`mt-6 w-full rounded-2xl py-3 text-sm font-semibold transition ${isCurrent ? 'bg-[var(--panel-soft)] text-[var(--muted)] cursor-default' : 'bg-[var(--brand)] text-slate-950 hover:opacity-90'} disabled:opacity-50`}
+                className={`mt-6 w-full rounded-2xl py-3 text-sm font-semibold transition ${isCurrent ? 'bg-[var(--panel-soft)] text-[var(--muted)] cursor-default' : 'bg-[var(--brand)] text-white hover:opacity-90'} disabled:opacity-50`}
               >
                 {isCurrent ? 'Current Plan' : `Upgrade to ${plan.label}`}
               </button>

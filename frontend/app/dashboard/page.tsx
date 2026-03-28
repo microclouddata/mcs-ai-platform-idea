@@ -55,9 +55,9 @@ export default function DashboardPage() {
         <h1 className="mb-4 text-3xl font-semibold">Dashboard</h1>
         <div className="flex flex-col gap-3 md:flex-row">
           <input className="flex-1 rounded-2xl border border-slate-300 px-4 py-3" value={name} onChange={(e) => setName(e.target.value)} placeholder="Agent name" />
-          <button className="rounded-2xl bg-[var(--brand)] px-5 py-3 font-semibold text-slate-950" onClick={createAgent}>Create Agent</button>
+          <button className="rounded-2xl bg-[var(--brand)] px-5 py-3 font-semibold text-white" onClick={createAgent}>Create Agent</button>
         </div>
-        {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
+        {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
       </section>
 
       <section className="rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-6">

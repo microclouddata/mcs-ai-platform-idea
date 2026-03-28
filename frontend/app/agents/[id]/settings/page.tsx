@@ -118,7 +118,7 @@ export default function AgentSettingsPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-4">
-        <button onClick={() => router.back()} className="text-sm text-[var(--muted)] hover:text-white">
+        <button onClick={() => router.back()} className="text-sm text-[var(--muted)] hover:text-[var(--text)]">
           ← Back
         </button>
         <h1 className="text-3xl font-semibold">Agent Settings</h1>
@@ -149,7 +149,7 @@ export default function AgentSettingsPage() {
 
         <div>
           <label className="mb-1 block text-sm text-[var(--muted)]">Provider</label>
-          <select className="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-[var(--panel)] text-white" value={provider} onChange={(e) => handleProviderChange(e.target.value)}>
+          <select className="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-[var(--panel)] text-[var(--text)]" value={provider} onChange={(e) => handleProviderChange(e.target.value)}>
             {Object.keys(availableModels).length > 0
               ? Object.keys(availableModels).map((p) => <option key={p} value={p}>{p}</option>)
               : <option value={provider}>{provider}</option>
@@ -159,7 +159,7 @@ export default function AgentSettingsPage() {
 
         <div>
           <label className="mb-1 block text-sm text-[var(--muted)]">Model</label>
-          <select className="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-[var(--panel)] text-white" value={model} onChange={(e) => setModel(e.target.value)}>
+          <select className="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-[var(--panel)] text-[var(--text)]" value={model} onChange={(e) => setModel(e.target.value)}>
             {modelsForProvider.length > 0
               ? modelsForProvider.map((m) => <option key={m} value={m}>{m}</option>)
               : <option value={model}>{model}</option>
@@ -187,14 +187,14 @@ export default function AgentSettingsPage() {
         <button
           disabled={saving}
           onClick={save}
-          className="rounded-2xl bg-[var(--brand)] px-6 py-3 font-semibold text-slate-950 disabled:opacity-50"
+          className="rounded-2xl bg-[var(--brand)] px-6 py-3 font-semibold text-white disabled:opacity-50"
         >
           Save settings
         </button>
       </div>
 
       <section className="rounded-3xl border border-red-900/40 bg-red-950/20 p-6 space-y-4">
-        <h2 className="text-xl font-semibold text-red-300">Danger zone</h2>
+        <h2 className="text-xl font-semibold text-red-600">Danger zone</h2>
 
         <div className="flex items-center justify-between">
           <div>
