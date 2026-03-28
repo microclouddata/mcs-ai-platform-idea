@@ -37,8 +37,8 @@ export default function AdminPage() {
   const tabClass = (t: Tab) =>
     `px-4 py-2 rounded-2xl text-sm font-semibold transition ${
       tab === t
-        ? 'bg-[var(--brand)] text-slate-950'
-        : 'text-[var(--muted)] hover:text-white'
+        ? 'bg-[var(--brand)] text-white'
+        : 'text-[var(--muted)] hover:text-[var(--text)]'
     }`;
 
   return (
@@ -52,7 +52,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      {error ? <p className="text-sm text-red-300">{error}</p> : null}
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
       {tab === 'users' && (
         <section className="rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-6">

@@ -32,8 +32,8 @@ export default function LoginPage() {
       <div className="space-y-4">
         <input className="w-full rounded-2xl border border-slate-300 px-4 py-3" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
         <input className="w-full rounded-2xl border border-slate-300 px-4 py-3" placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <button className="w-full rounded-2xl bg-[var(--brand)] px-4 py-3 font-semibold text-slate-950" onClick={handleSubmit}>Login</button>
-        {error ? <p className="text-sm text-red-300">{error}</p> : null}
+        <button className="w-full rounded-2xl bg-[var(--brand)] px-4 py-3 font-semibold text-white" onClick={handleSubmit}>Login</button>
+        {error ? <p className="text-sm text-red-600">{error}</p> : null}
       </div>
     </div>
   );

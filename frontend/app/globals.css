@@ -1,21 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b1020;
-  --panel: #121931;
-  --panel-soft: #1b2447;
-  --text: #f4f7ff;
-  --muted: #a5b0d6;
-  --brand: #6ea8fe;
-  --border: #2e3a68;
+  --background: #f8faff;
+  --panel: #ffffff;
+  --panel-soft: #f0f5ff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --brand: #2563eb;
+  --border: #e2e8f0;
 }
 
 body {
-  background: linear-gradient(180deg, #0b1020, #0f1730 40%, #0d1530);
+  background: linear-gradient(135deg, #dbeafe 0%, #f8faff 45%, #ede9fe 100%);
+  background-attachment: fixed;
   color: var(--text);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
 }
 
 input, textarea, select {
-  color: #f4f7ff;
+  color: var(--text);
+  background: #ffffff;
 }
