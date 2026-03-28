@@ -20,7 +20,7 @@ export default function AgentDetailPage() {
   const [status, setStatus] = useState('');
   const [saving, setSaving] = useState(false);
   const [activeSkills, setActiveSkills] = useState<Skill[]>([]);
-  const [selectedSkillId, setSelectedSkillId] = useState<string>('');
+  const [selectedSkillId, setSelectedSkillId] = useState<string>('__none__');
   const [chatFiles, setChatFiles] = useState<File[]>([]);
   const chatFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -211,8 +211,8 @@ export default function AgentDetailPage() {
             onChange={e => setSelectedSkillId(e.target.value)}
             className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--panel-soft)] px-3 py-1.5 text-sm text-[var(--foreground)]"
           >
-            <option value="">All active skills</option>
             <option value="__none__">No skill</option>
+            <option value="">All active skills</option>
             {activeSkills.map(s => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}

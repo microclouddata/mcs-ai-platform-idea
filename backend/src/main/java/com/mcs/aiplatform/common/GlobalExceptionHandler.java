@@ -30,4 +30,10 @@ public class GlobalExceptionHandler {
     public ApiResponse<Void> handleRuntime(RuntimeException ex) {
         return ApiResponse.fail(ex.getMessage());
     }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ApiResponse<Void> handleGeneral(Exception ex) {
+        return ApiResponse.fail(ex.getMessage() != null ? ex.getMessage() : "An unexpected error occurred");
+    }
 }

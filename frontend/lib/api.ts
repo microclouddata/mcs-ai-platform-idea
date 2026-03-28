@@ -20,10 +20,16 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
     headers,
   });
 
-  const data = await res.json();
+  let data: Record<string, unknown>;
+  try {
+    data = await res.json();
+  } catch {
+    const text = await res.text().catch(() => "Request failed");
+    throw new Error(text || "Request failed");
+  }
 
   if (!res.ok || data.success === false) {
-    throw new Error(data.message || "Request failed");
+    throw new Error((data.message as string) || "Request failed");
   }
 
   return data.data;
