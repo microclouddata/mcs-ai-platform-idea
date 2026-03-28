@@ -3,9 +3,12 @@ package com.mcs.aiplatform.document;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
@@ -34,6 +37,13 @@ public class TextExtractorService {
             try (PDDocument document = Loader.loadPDF(file.getBytes())) {
                 PDFTextStripper stripper = new PDFTextStripper();
                 return stripper.getText(document);
+            }
+        }
+
+        if (fileName.endsWith(".docx")) {
+            try (XWPFDocument docx = new XWPFDocument(new ByteArrayInputStream(file.getBytes()));
+                 XWPFWordExtractor extractor = new XWPFWordExtractor(docx)) {
+                return extractor.getText();
             }
         }
 

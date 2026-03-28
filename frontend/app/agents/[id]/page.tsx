@@ -195,7 +195,7 @@ export default function AgentDetailPage() {
         ref={chatFileInputRef}
         type="file"
         multiple
-        accept=".txt,.md,.pdf,.json,.csv,.xml,.yaml,.yml,.js,.ts,.java,.py,.png,.jpg,.jpeg,.gif,.webp"
+        accept=".txt,.md,.pdf,.docx,.json,.csv,.xml,.yaml,.yml,.js,.ts,.java,.py,.png,.jpg,.jpeg,.gif,.webp"
         className="hidden"
         onChange={(e) => {
           const selected = Array.from(e.target.files ?? []);
@@ -277,7 +277,7 @@ export default function AgentDetailPage() {
           <input
             id="file-input"
             type="file"
-            accept=".pdf,.txt,.md"
+            accept=".pdf,.txt,.md,.docx"
             className="hidden"
             onChange={(e: ChangeEvent<HTMLInputElement>) => setFile(e.target.files?.[0] ?? null)}
           />
