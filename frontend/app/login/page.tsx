@@ -7,8 +7,8 @@ import { AuthResponse } from '@/lib/types';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('test@microcloudsoftware.com');
+  const [password, setPassword] = useState('123456');
   const [error, setError] = useState('');
 
   async function handleSubmit() {
