@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker --version)",
+      "Bash(docker compose:*)",
+      "Bash(kubectl version:*)",
+      "Bash(minikube version:*)",
+      "Bash(echo $SHELL)",
+      "Bash(echo $OS)",
+      "Read(//etc/**)",
+      "Bash(kubectl config:*)",
+      "Bash(winget --version)",
+      "Bash(choco --version)",
+      "Bash(mkdir -p \"D:\\\\Users\\\\billc\\\\Documents\\\\IdeaProjects\\\\mcs-ai-platform-idea\\\\.claude\\\\worktrees\\\\busy-hawking\\\\frontend\\\\public\")",
+      "Bash(touch \"D:\\\\Users\\\\billc\\\\Documents\\\\IdeaProjects\\\\mcs-ai-platform-idea\\\\.claude\\\\worktrees\\\\busy-hawking\\\\frontend\\\\public\\\\.gitkeep\")",
+      "Bash(kubectl apply:*)",
+      "Bash(kubectl get:*)"
+    ]
+  }
+}

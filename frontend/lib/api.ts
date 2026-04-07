@@ -1,6 +1,6 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8081/api";
 
-export async function apiFetch(path: string, options: RequestInit = {}) {
+export async function apiFetch<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   const headers: Record<string, string> = {
@@ -32,5 +32,5 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
     throw new Error((data.message as string) || "Request failed");
   }
 
-  return data.data;
+  return data.data as T;
 }

@@ -56,6 +56,7 @@ export type UsageLog = {
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
+  cost?: number;
   createdAt: string;
 };
 
