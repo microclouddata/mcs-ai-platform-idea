@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: mcs-ai-platform
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      # initContainer 等待 MongoDB 真正就绪后才启动 backend
+      # 避免 Spring Boot 因 MongoDB 未就绪而启动失败进入 CrashLoopBackOff
+      initContainers:
+        - name: wait-for-mongodb
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for MongoDB at mongodb:27017..."
+              until nc -z mongodb 27017; do
+                echo "MongoDB not ready, retrying in 3s..."
+                sleep 3
+              done
+              echo "MongoDB is ready!"
+      containers:
+        - name: backend
+          image: mcs-ai-platform-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: mcs-config
+          env:
+            - name: APP_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mcs-secrets
+                  key: APP_JWT_SECRET
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: mcs-secrets
+                  key: OPENAI_API_KEY
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 45
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 5
+      volumes:
+        - name: uploads
+          # emptyDir is used for the portfolio demo.
+          # Trade-off: uploaded files are lost on pod restart.
+          # Production replacement: use a PVC or object storage (S3/GCS).
+          emptyDir: {}

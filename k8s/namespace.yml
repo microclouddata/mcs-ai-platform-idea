@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mcs-ai-platform
+  labels:
+    app.kubernetes.io/name: mcs-ai-platform
