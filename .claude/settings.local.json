@@ -14,7 +14,10 @@
       "Bash(mkdir -p \"D:\\\\Users\\\\billc\\\\Documents\\\\IdeaProjects\\\\mcs-ai-platform-idea\\\\.claude\\\\worktrees\\\\busy-hawking\\\\frontend\\\\public\")",
       "Bash(touch \"D:\\\\Users\\\\billc\\\\Documents\\\\IdeaProjects\\\\mcs-ai-platform-idea\\\\.claude\\\\worktrees\\\\busy-hawking\\\\frontend\\\\public\\\\.gitkeep\")",
       "Bash(kubectl apply:*)",
-      "Bash(kubectl get:*)"
+      "Bash(kubectl get:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(echo \"Exit code: $?\")"
     ]
   }
 }
