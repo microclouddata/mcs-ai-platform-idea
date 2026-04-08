@@ -5,6 +5,9 @@ import com.mcs.aiplatform.config.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ *  agent controller
+ */
 @RestController
 @RequestMapping("/api/agents")
 @RequiredArgsConstructor
