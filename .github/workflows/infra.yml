@@ -1,0 +1,67 @@
+name: Infra (K8s Manifests)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'k8s/**'
+      - '.github/workflows/infra.yml'
+  # 支持手动触发（从 Actions 页面直接点击 Run workflow）
+  workflow_dispatch:
+
+jobs:
+  # ── K8s 清单变更时自动 apply（需手动审批）──────────────────────────
+  apply:
+    name: kubectl apply
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+
+      - name: Apply namespace first
+        run: kubectl apply -f k8s/namespace.yml
+
+      - name: Apply ConfigMap and Secret
+        run: kubectl apply -f k8s/configmap.yml -f k8s/secret.yml
+
+      - name: Apply MongoDB
+        run: |
+          kubectl apply -f k8s/mongodb-pvc.yml
+          kubectl apply -f k8s/mongodb-deployment.yml
+          kubectl apply -f k8s/mongodb-service.yml
+
+      - name: Apply Backend
+        run: |
+          kubectl apply -f k8s/backend-deployment.yml
+          kubectl apply -f k8s/backend-service.yml
+
+      - name: Apply Frontend
+        run: |
+          kubectl apply -f k8s/frontend-deployment.yml
+          kubectl apply -f k8s/frontend-service.yml
+
+      - name: Apply HPA and Ingress
+        run: |
+          kubectl apply -f k8s/hpa.yml
+          kubectl apply -f k8s/ingress.yml
+
+      - name: Show cluster status
+        run: |
+          echo "=== Pods ==="
+          kubectl get pods -n mcs-ai-platform
+          echo "=== Services ==="
+          kubectl get svc -n mcs-ai-platform
+          echo "=== Ingress ==="
+          kubectl get ingress -n mcs-ai-platform
+          echo "=== HPA ==="
+          kubectl get hpa -n mcs-ai-platform

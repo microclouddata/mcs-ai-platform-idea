@@ -1,0 +1,128 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend.yml'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/mcs-ai-platform-frontend
+
+jobs:
+  # ── Job 1: Lint + Build（PR + push 都触发）────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Lint
+        run: npm run lint
+        working-directory: frontend
+
+      - name: Build
+        run: npm run build
+        working-directory: frontend
+        env:
+          # 禁用 Next.js 遥测上报，加速 CI 构建
+          NEXT_TELEMETRY_DISABLED: 1
+          # 编译时传入 API 基础路径（baked into client bundle）
+          NEXT_PUBLIC_API_BASE: /api
+
+  # ── Job 2: 构建并推送 Docker 镜像（仅 push to main）────────────────
+  docker-publish:
+    name: Docker Publish
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_API_BASE=/api
+            BACKEND_URL=http://backend-service:8081
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── Job 3: 部署到 Kubernetes（push to main + 手动审批）─────────────
+  deploy:
+    name: Deploy to K8s
+    needs: docker-publish
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+
+      - name: Update frontend image
+        run: |
+          kubectl set image deployment/frontend \
+            frontend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }} \
+            -n mcs-ai-platform
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/frontend \
+            -n mcs-ai-platform \
+            --timeout=120s
+
+      - name: Verify pod status
+        run: kubectl get pods -n mcs-ai-platform -l app=frontend
