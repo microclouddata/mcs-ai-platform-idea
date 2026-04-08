@@ -10,23 +10,15 @@ on:
   workflow_dispatch:
 
 jobs:
-  # ── K8s 清单变更时自动 apply（需手动审批）──────────────────────────
+  # ── K8s 清单变更时自动 apply（self-hosted runner 可访问本地 K8s）──
   apply:
     name: kubectl apply
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     environment: production
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-
-      - name: Configure kubeconfig
-        run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
 
       - name: Apply namespace first
         run: kubectl apply -f k8s/namespace.yml
