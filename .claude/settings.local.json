@@ -17,7 +17,8 @@
       "Bash(kubectl get:*)",
       "Bash(npm install:*)",
       "Bash(npm run:*)",
-      "Bash(echo \"Exit code: $?\")"
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(kubectl describe:*)"
     ]
   }
 }
