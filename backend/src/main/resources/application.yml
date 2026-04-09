@@ -38,6 +38,11 @@ llm:
   embedding:
     model: ${LLM_EMBEDDING_MODEL:text-embedding-3-small}
 
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+
 logging:
   level:
     org.springframework.security: INFO

@@ -1,3 +1,9 @@
+# ---- Stage 0: Download OpenTelemetry Java Agent ----
+FROM curlimages/curl:8.11.1 AS otel-agent
+# curlimages/curl runs as non-root — write to /tmp which is world-writable
+RUN curl -Lo /tmp/opentelemetry-javaagent.jar \
+    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.12.0/opentelemetry-javaagent.jar
+
 # ---- Stage 1: Build ----
 FROM maven:3.9.9-eclipse-temurin-21-alpine AS builder
 WORKDIR /build
@@ -20,8 +26,9 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 RUN mkdir -p /app/uploads && chown appuser:appgroup /app/uploads
 
 COPY --from=builder /build/target/ai-platform-backend-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=otel-agent /tmp/opentelemetry-javaagent.jar /app/opentelemetry-javaagent.jar
 
 USER appuser
 EXPOSE 8081
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-javaagent:/app/opentelemetry-javaagent.jar", "-jar", "app.jar"]

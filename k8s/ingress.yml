@@ -27,6 +27,15 @@ spec:
                 name: backend-service
                 port:
                   number: 8081
+          # Jaeger UI — accessible at http://mcs-ai-platform.local/jaeger/
+          # nginx strips the /jaeger prefix before forwarding (rewrite-target: /).
+          - path: /jaeger
+            pathType: Prefix
+            backend:
+              service:
+                name: jaeger
+                port:
+                  number: 16686
           # Route everything else to the Next.js frontend.
           - path: /
             pathType: Prefix
