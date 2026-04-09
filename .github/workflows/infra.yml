@@ -55,6 +55,14 @@ jobs:
           kubectl apply -f k8s/hpa.yml
           kubectl apply -f k8s/ingress.yml
 
+      - name: Apply Observability (OTEL Collector + Jaeger)
+        run: |
+          kubectl apply -f k8s/otel-collector-configmap.yml
+          kubectl apply -f k8s/otel-collector-deployment.yml
+          kubectl apply -f k8s/otel-collector-service.yml
+          kubectl apply -f k8s/jaeger-deployment.yml
+          kubectl apply -f k8s/jaeger-service.yml
+
       - name: Show cluster status
         run: |
           echo "=== Pods ==="
@@ -65,3 +73,5 @@ jobs:
           kubectl get ingress -n mcs-ai-platform
           echo "=== HPA ==="
           kubectl get hpa -n mcs-ai-platform
+          echo "=== Observability ==="
+          kubectl get deploy otel-collector jaeger -n mcs-ai-platform

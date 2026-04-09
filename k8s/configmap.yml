@@ -12,3 +12,13 @@ data:
   LLM_EMBEDDING_MODEL: "text-embedding-3-small"
   OLLAMA_BASE_URL: "http://localhost:11434"
   BACKEND_URL: "http://backend-service:8081"
+  # OpenTelemetry Java Agent configuration
+  # OTEL_SERVICE_NAME identifies this service in Jaeger traces
+  OTEL_SERVICE_NAME: "mcs-ai-platform-backend"
+  # Send traces to the OTEL Collector via OTLP gRPC
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+  OTEL_TRACES_EXPORTER: "otlp"
+  OTEL_METRICS_EXPORTER: "none"
+  OTEL_LOGS_EXPORTER: "none"
+  # Propagate trace context across HTTP boundaries (W3C TraceContext standard)
+  OTEL_PROPAGATORS: "tracecontext,baggage"

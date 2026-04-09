@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+  namespace: mcs-ai-platform
+  labels:
+    app: jaeger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+  template:
+    metadata:
+      labels:
+        app: jaeger
+    spec:
+      containers:
+        - name: jaeger
+          # all-in-one: collector + query + UI in a single container.
+          # Uses in-memory storage — traces are lost on pod restart.
+          # Trade-off acceptable for portfolio demo; production would use Elasticsearch or Cassandra.
+          image: jaegertracing/all-in-one:latest
+          env:
+            - name: COLLECTOR_OTLP_ENABLED
+              value: "true"
+            # Serve the Jaeger UI under /jaeger so nginx Ingress can route it
+            # without a rewrite rule (Jaeger handles the subpath itself).
+            - name: QUERY_BASE_PATH
+              value: "/jaeger"
+          ports:
+            - name: ui
+              containerPort: 16686   # Jaeger UI / query API
+            - name: otlp-grpc
+              containerPort: 4317    # OTLP gRPC ingest from OTEL Collector
+            - name: otlp-http
+              containerPort: 4318    # OTLP HTTP ingest
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 16686
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 16686
+            initialDelaySeconds: 10
+            periodSeconds: 10

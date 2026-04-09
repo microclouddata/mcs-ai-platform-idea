@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: mcs-ai-platform
+data:
+  config.yaml: |
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      batch:
+        # Batch up to 512 spans or flush every 5s, whichever comes first.
+        # Reduces per-export overhead in production.
+        send_batch_size: 512
+        timeout: 5s
+      memory_limiter:
+        # Prevent OOM in resource-constrained demo environments.
+        check_interval: 1s
+        limit_mib: 200
+        spike_limit_mib: 50
+
+    exporters:
+      # Forward all traces to Jaeger via OTLP gRPC (Jaeger 1.35+ supports OTLP natively)
+      otlp/jaeger:
+        endpoint: jaeger:4317
+        tls:
+          insecure: true
+      # Log pipeline activity — useful for debugging during demo
+      debug:
+        verbosity: basic
+
+    service:
+      extensions: [health_check]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [otlp/jaeger, debug]
