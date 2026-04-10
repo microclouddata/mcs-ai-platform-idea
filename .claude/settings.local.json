@@ -18,7 +18,8 @@
       "Bash(npm install:*)",
       "Bash(npm run:*)",
       "Bash(echo \"Exit code: $?\")",
-      "Bash(kubectl describe:*)"
+      "Bash(kubectl describe:*)",
+      "Bash(pandoc \"G:\\\\backup-data\\\\Dell\\\\own_company\\\\microclouddata\\\\AI\\\\project\\\\mcs-ai-platform\\\\documents\\\\upgrade\\\\upgrade中文版.docx\" -t markdown)"
     ]
   }
 }

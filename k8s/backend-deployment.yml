@@ -18,7 +18,7 @@ spec:
       # initContainer 等待 MongoDB 真正就绪后才启动 backend
       # 避免 Spring Boot 因 MongoDB 未就绪而启动失败进入 CrashLoopBackOff
       initContainers:
-        - name: wait-for-mongodb
+        - name: wait-for-dependencies
           image: busybox:latest
           command:
             - sh
@@ -30,6 +30,12 @@ spec:
                 sleep 3
               done
               echo "MongoDB is ready!"
+              echo "Waiting for Redis at redis:6379..."
+              until nc -z redis 6379; do
+                echo "Redis not ready, retrying in 3s..."
+                sleep 3
+              done
+              echo "Redis is ready!"
       containers:
         - name: backend
           image: mcs-ai-platform-backend:latest

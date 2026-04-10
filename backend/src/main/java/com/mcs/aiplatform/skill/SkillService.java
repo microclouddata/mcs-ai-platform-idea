@@ -3,6 +3,8 @@ package com.mcs.aiplatform.skill;
 import com.mcs.aiplatform.agent.AgentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,6 +20,11 @@ public class SkillService {
     private final AgentService agentService;
     private final SkillFileService skillFileService;
 
+    /**
+     * A. 热配置缓存 — Skills list is fetched on every chat to build the LLM context.
+     * Cache by agentId. Evicted on any skill mutation.
+     */
+    @Cacheable(value = "agent-skills", key = "#agentId")
     public List<Skill> list(String userId, String agentId) {
         validateOwner(userId, agentId);
         return skillRepository.findByAgentId(agentId);
@@ -29,6 +36,7 @@ public class SkillService {
                 .orElseThrow(() -> new IllegalArgumentException("Skill not found"));
     }
 
+    @CacheEvict(value = "agent-skills", key = "#agentId")
     public Skill create(String userId, String agentId, CreateSkillRequest req) {
         validateOwner(userId, agentId);
         Skill skill = new Skill();
@@ -39,18 +47,21 @@ public class SkillService {
         return saved;
     }
 
+    @CacheEvict(value = "agent-skills", key = "#agentId")
     public Skill update(String userId, String agentId, String skillId, UpdateSkillRequest req) {
         Skill skill = get(userId, agentId, skillId);
         applyUpdateRequest(skill, req);
         return skillRepository.save(skill);
     }
 
+    @CacheEvict(value = "agent-skills", key = "#agentId")
     public void delete(String userId, String agentId, String skillId) {
         Skill skill = get(userId, agentId, skillId);
         skillRepository.deleteById(skill.getId());
         skillFileService.deleteSkillDirectory(skill.getId());
     }
 
+    @CacheEvict(value = "agent-skills", key = "#agentId")
     public Skill toggleStatus(String userId, String agentId, String skillId) {
         Skill skill = get(userId, agentId, skillId);
         skill.setStatus(skill.getStatus() == SkillStatus.ACTIVE ? SkillStatus.INACTIVE : SkillStatus.ACTIVE);
