@@ -7,6 +7,15 @@ spring:
   data:
     mongodb:
       uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/mcs_ai_platform}
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      # No password for local dev; set REDIS_PASSWORD in K8s Secret for production.
+      password: ${REDIS_PASSWORD:}
+      connect-timeout: 2s
+      timeout: 1s
+  cache:
+    type: redis
   servlet:
     multipart:
       max-file-size: 20MB

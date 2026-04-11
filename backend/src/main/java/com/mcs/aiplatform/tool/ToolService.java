@@ -3,6 +3,8 @@ package com.mcs.aiplatform.tool;
 import com.mcs.aiplatform.tool.executor.ToolExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -19,6 +21,11 @@ public class ToolService {
     private final AgentToolBindingRepository bindingRepository;
     private final List<ToolExecutor> executors;
 
+    /**
+     * A. 热配置缓存 — Tool bindings rarely change; fetched on every chat request.
+     * Cache by agentId with 30-min TTL. Evicted when bindings are updated.
+     */
+    @Cacheable(value = "agent-tools", key = "#agentId")
     public List<AgentToolBinding> getEnabledBindings(String agentId) {
         return bindingRepository.findByAgentIdAndEnabled(agentId, true);
     }
@@ -56,7 +63,9 @@ public class ToolService {
 
     /**
      * Replaces all tool bindings for an agent with the provided list.
+     * Evicts the agent-tools cache so the next chat request loads fresh bindings.
      */
+    @CacheEvict(value = "agent-tools", key = "#agentId")
     public List<AgentToolBinding> updateBindings(String agentId, List<String> toolTypeNames) {
         bindingRepository.deleteByAgentId(agentId);
         List<AgentToolBinding> newBindings = toolTypeNames.stream().map(name -> {

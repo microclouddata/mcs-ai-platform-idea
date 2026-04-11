@@ -1,4 +1,16 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: mcs-redis
+    ports:
+      - "6379:6379"
+    command: ["--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
   mongodb:
     image: mongo:7.0
     container_name: mcs-mongodb
@@ -27,10 +39,14 @@ services:
       CORS_ALLOWED_ORIGINS: http://localhost:3000,http://frontend:3000
       LLM_MOCK_ENABLED: "false"
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
     volumes:
       - backend_uploads:/app/uploads
     depends_on:
       mongodb:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health || exit 1"]

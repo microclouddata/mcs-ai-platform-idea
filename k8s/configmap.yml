@@ -12,6 +12,9 @@ data:
   LLM_EMBEDDING_MODEL: "text-embedding-3-small"
   OLLAMA_BASE_URL: "http://localhost:11434"
   BACKEND_URL: "http://backend-service:8081"
+  # Redis — Spring Cache + distributed rate limiting
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
   # OpenTelemetry Java Agent configuration
   # OTEL_SERVICE_NAME identifies this service in Jaeger traces
   OTEL_SERVICE_NAME: "mcs-ai-platform-backend"

@@ -2,6 +2,8 @@ package com.mcs.aiplatform.agent;
 
 import com.mcs.aiplatform.organization.OrgMembershipRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -55,6 +57,12 @@ public class AgentService {
                 .orElseThrow(() -> new IllegalArgumentException("Agent not found"));
     }
 
+    /**
+     * A. 热配置缓存 — Agent config is fetched on every chat request.
+     * Cache by agentId (independent of which user is calling) with 30-min TTL.
+     * Evicted on any write (update / toggleEnabled / delete).
+     */
+    @Cacheable(value = "agents", key = "#agentId")
     public Agent getForUse(String agentId, String userId) {
         Agent agent = agentRepository.findById(agentId)
                 .orElseThrow(() -> new IllegalArgumentException("Agent not found"));
@@ -70,6 +78,7 @@ public class AgentService {
         throw new IllegalArgumentException("Agent not found");
     }
 
+    @CacheEvict(value = "agents", key = "#agentId")
     public Agent update(String userId, String agentId, UpdateAgentRequest request) {
         Agent agent = get(userId, agentId);
         if (request.name() != null) agent.setName(request.name());
@@ -84,12 +93,14 @@ public class AgentService {
         return agentRepository.save(agent);
     }
 
+    @CacheEvict(value = "agents", key = "#agentId")
     public Agent toggleEnabled(String userId, String agentId) {
         Agent agent = get(userId, agentId);
         agent.setEnabled(!agent.isEnabled());
         return agentRepository.save(agent);
     }
 
+    @CacheEvict(value = "agents", key = "#agentId")
     public void delete(String userId, String agentId) {
         Agent agent = get(userId, agentId);
         agentRepository.delete(agent);

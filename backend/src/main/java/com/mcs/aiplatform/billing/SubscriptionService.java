@@ -1,6 +1,8 @@
 package com.mcs.aiplatform.billing;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -24,6 +26,11 @@ public class SubscriptionService {
         });
     }
 
+    /**
+     * Upgrades the plan and evicts the user-plans cache so the new plan takes
+     * effect immediately in RateLimitService on the next request.
+     */
+    @CacheEvict(value = "user-plans", key = "#userId")
     public Subscription upgrade(String userId, PlanType plan) {
         Subscription sub = getOrCreate(userId);
         sub.setPlan(plan);
@@ -33,6 +40,11 @@ public class SubscriptionService {
         return subscriptionRepository.save(sub);
     }
 
+    /**
+     * A. 热配置缓存 — Plan type is looked up on every rate-limit check.
+     * Cache per userId with 30-min TTL. Evicted on plan upgrade.
+     */
+    @Cacheable(value = "user-plans", key = "#userId")
     public PlanType getPlan(String userId) {
         return subscriptionRepository.findByUserId(userId)
                 .map(Subscription::getPlan)
