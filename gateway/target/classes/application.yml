@@ -11,26 +11,90 @@ spring:
   cloud:
     gateway:
       routes:
-        # ── Public: auth endpoints — no JWT required ──────────────────────────
+        # ── Public: auth endpoints → auth-service ────────────────────────────
         - id: auth-route
-          uri: ${BACKEND_URL:http://localhost:8081}
+          uri: ${AUTH_SERVICE_URL:http://localhost:8082}
           predicates:
             - Path=/api/auth/**
           filters:
             - name: CircuitBreaker
               args:
-                name: backendCircuitBreaker
+                name: authCircuitBreaker
                 fallbackUri: forward:/fallback
 
-        # ── Public: health passthrough ────────────────────────────────────────
+        # ── Public: health passthrough → backend ──────────────────────────────
         - id: actuator-route
           uri: ${BACKEND_URL:http://localhost:8081}
           predicates:
             - Path=/actuator/**
 
-        # ── Protected: all other API routes ──────────────────────────────────
-        # Order matters: JwtAuth runs first (sets X-User-Id), then the rate
-        # limiter uses X-User-Id as the bucket key.
+        # ── Protected: agent endpoints → agent-service ──────────────────────
+        - id: agent-route
+          uri: ${AGENT_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/agents/**
+          filters:
+            - JwtAuth
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 20
+                redis-rate-limiter.burstCapacity: 40
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@userKeyResolver}"
+            - name: CircuitBreaker
+              args:
+                name: agentCircuitBreaker
+                fallbackUri: forward:/fallback
+
+        # ── Protected: chat + model endpoints → chat-service ────────────────
+        - id: chat-route
+          uri: ${CHAT_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/chat/**,/api/models/**
+          filters:
+            - JwtAuth
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 20
+                redis-rate-limiter.burstCapacity: 40
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@userKeyResolver}"
+            - name: CircuitBreaker
+              args:
+                name: chatCircuitBreaker
+                fallbackUri: forward:/fallback
+
+        # ── Protected: document/RAG endpoints → rag-service ─────────────────
+        - id: rag-route
+          uri: ${RAG_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/documents/**,/api/rag/**
+          filters:
+            - JwtAuth
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@userKeyResolver}"
+            - name: CircuitBreaker
+              args:
+                name: ragCircuitBreaker
+                fallbackUri: forward:/fallback
+
+        # ── Protected: usage endpoints → usage-service ──────────────────────
+        - id: usage-route
+          uri: ${USAGE_SERVICE_URL:http://localhost:8086}
+          predicates:
+            - Path=/api/usage/**
+          filters:
+            - JwtAuth
+            - name: CircuitBreaker
+              args:
+                name: usageCircuitBreaker
+                fallbackUri: forward:/fallback
+
+        # ── Protected: remaining API routes → backend (legacy) ───────────────
         - id: api-route
           uri: ${BACKEND_URL:http://localhost:8081}
           predicates:
@@ -52,7 +116,37 @@ spring:
 resilience4j:
   circuitbreaker:
     instances:
-      backendCircuitBreaker:
+      backendCircuitBreaker: &cbDefaults
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+      authCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+      agentCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+      chatCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+      ragCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+      usageCircuitBreaker:
         slidingWindowSize: 10
         minimumNumberOfCalls: 5
         failureRateThreshold: 50

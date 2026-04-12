@@ -3,6 +3,7 @@ package com.mcs.chat.client;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -32,7 +33,7 @@ public class AgentServiceClient {
         return restClient.get()
                 .uri("/internal/agents/{id}/skills/active", agentId)
                 .retrieve()
-                .bodyList(SkillDto.class);
+                .body(new ParameterizedTypeReference<List<SkillDto>>() {});
     }
 
     public SkillDto getSkillById(String agentId, String skillId) {
