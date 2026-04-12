@@ -65,21 +65,13 @@ services:
     environment:
       SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/mcs_ai_platform
       APP_JWT_SECRET: ${APP_JWT_SECRET:-cmVwbGFjZS13aXRoLXlvdXItYWN0dWFsLWp3dC1zZWNyZXQtbWluaW11bS0zMi1ieXRlcw==}
-      APP_STORAGE_PATH: /app/uploads
       CORS_ALLOWED_ORIGINS: http://localhost:3000,http://frontend:3000,http://localhost:8080
-      LLM_MOCK_ENABLED: "false"
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-    volumes:
-      - backend_uploads:/app/uploads
     depends_on:
       mongodb:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      kafka:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health || exit 1"]
@@ -292,6 +284,5 @@ services:
 
 volumes:
   mongodb_data:
-  backend_uploads:
   chat_uploads:
   rag_uploads:
