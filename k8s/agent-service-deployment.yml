@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-service
+  namespace: mcs-ai-platform
+  labels:
+    app: agent-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agent-service
+  template:
+    metadata:
+      labels:
+        app: agent-service
+    spec:
+      initContainers:
+        - name: wait-for-dependencies
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for MongoDB at mongodb:27017..."
+              until nc -z mongodb 27017; do sleep 3; done
+              echo "MongoDB ready!"
+              echo "Waiting for Redis at redis:6379..."
+              until nc -z redis 6379; do sleep 3; done
+              echo "Redis ready!"
+      containers:
+        - name: agent-service
+          image: mcs-agent-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8083
+          envFrom:
+            - configMapRef:
+                name: mcs-config
+          env:
+            - name: APP_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mcs-secrets
+                  key: APP_JWT_SECRET
+            - name: SPRING_DATA_MONGODB_URI
+              value: "mongodb://mongodb:27017/mcs_ai_platform"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8083
+            initialDelaySeconds: 45
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8083
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 5

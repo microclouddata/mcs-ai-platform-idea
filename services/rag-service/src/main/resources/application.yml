@@ -1,0 +1,52 @@
+server:
+  port: 8085
+spring:
+  application:
+    name: rag-service
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/mcs_ai_platform}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9093}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+    consumer:
+      group-id: rag-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.mcs.rag.kafka.event"
+        spring.json.use.type.headers: true
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
+  jwt:
+    secret: ${APP_JWT_SECRET:cUVHUmhsQ1ReaGF1OWhlMzM5JHJyRjZuUEVYaXUlemt5JDdjJVpuYjdsQklIVndSVVVXSXNmS0FWSyZodUVqKg==}
+  storage:
+    local-path: ${APP_STORAGE_PATH:/app/uploads}
+llm:
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+  embedding:
+    model: ${LLM_EMBEDDING_MODEL:text-embedding-3-small}
+  mock-mode: ${LLM_MOCK_ENABLED:false}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+logging:
+  level:
+    org.springframework.security: INFO

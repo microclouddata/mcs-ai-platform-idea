@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-service
+  namespace: mcs-ai-platform
+  labels:
+    app: rag-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rag-service
+  template:
+    metadata:
+      labels:
+        app: rag-service
+    spec:
+      initContainers:
+        - name: wait-for-dependencies
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for MongoDB at mongodb:27017..."
+              until nc -z mongodb 27017; do sleep 3; done
+              echo "MongoDB ready!"
+              echo "Waiting for Kafka at kafka:9092..."
+              until nc -z kafka 9092; do sleep 3; done
+              echo "Kafka ready!"
+      containers:
+        - name: rag-service
+          image: mcs-rag-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8085
+          envFrom:
+            - configMapRef:
+                name: mcs-config
+          env:
+            - name: APP_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mcs-secrets
+                  key: APP_JWT_SECRET
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: mcs-secrets
+                  key: OPENAI_API_KEY
+            - name: SPRING_DATA_MONGODB_URI
+              value: "mongodb://mongodb:27017/mcs_ai_platform"
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8085
+            initialDelaySeconds: 45
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8085
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 5
+      volumes:
+        - name: uploads
+          emptyDir: {}

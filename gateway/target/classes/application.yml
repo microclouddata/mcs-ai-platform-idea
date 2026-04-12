@@ -1,0 +1,78 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  cloud:
+    gateway:
+      routes:
+        # ── Public: auth endpoints — no JWT required ──────────────────────────
+        - id: auth-route
+          uri: ${BACKEND_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: backendCircuitBreaker
+                fallbackUri: forward:/fallback
+
+        # ── Public: health passthrough ────────────────────────────────────────
+        - id: actuator-route
+          uri: ${BACKEND_URL:http://localhost:8081}
+          predicates:
+            - Path=/actuator/**
+
+        # ── Protected: all other API routes ──────────────────────────────────
+        # Order matters: JwtAuth runs first (sets X-User-Id), then the rate
+        # limiter uses X-User-Id as the bucket key.
+        - id: api-route
+          uri: ${BACKEND_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/**
+          filters:
+            - JwtAuth
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 20
+                redis-rate-limiter.burstCapacity: 40
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@userKeyResolver}"
+            - name: CircuitBreaker
+              args:
+                name: backendCircuitBreaker
+                fallbackUri: forward:/fallback
+
+# Circuit Breaker configuration (Resilience4j)
+resilience4j:
+  circuitbreaker:
+    instances:
+      backendCircuitBreaker:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+app:
+  jwt:
+    secret: ${APP_JWT_SECRET:cUVHUmhsQ1ReaGF1OWhlMzM5JHJyRjZuUEVYaXUlemt5JDdjJVpuYjdsQklIVndSVVVXSXNmS0FWSyZodUVqKg==}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,gateway
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    com.mcs.gateway: INFO

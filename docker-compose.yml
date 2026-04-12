@@ -25,6 +25,36 @@ services:
       retries: 5
       start_period: 20s
 
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: mcs-kafka
+    ports:
+      - "9092:9092"   # Docker-internal listener (used by backend/gateway containers)
+      - "9093:9093"   # Host listener (used when backend runs locally outside Docker)
+    environment:
+      # KRaft mode — no Zookeeper required
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      # Three listeners: internal Docker, external host, KRaft controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9093,CONTROLLER://0.0.0.0:9094
+      # PLAINTEXT   → advertised to Docker-internal clients  (backend container uses kafka:9092)
+      # PLAINTEXT_HOST → advertised to host clients          (local backend uses localhost:9093)
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9094
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
   backend:
     build:
       context: ./backend
@@ -36,17 +66,20 @@ services:
       SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/mcs_ai_platform
       APP_JWT_SECRET: ${APP_JWT_SECRET:-cmVwbGFjZS13aXRoLXlvdXItYWN0dWFsLWp3dC1zZWNyZXQtbWluaW11bS0zMi1ieXRlcw==}
       APP_STORAGE_PATH: /app/uploads
-      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://frontend:3000
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://frontend:3000,http://localhost:8080
       LLM_MOCK_ENABLED: "false"
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     volumes:
       - backend_uploads:/app/uploads
     depends_on:
       mongodb:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health || exit 1"]
@@ -55,22 +88,210 @@ services:
       retries: 5
       start_period: 30s
 
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: mcs-auth-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/mcs_auth
+      APP_JWT_SECRET: ${APP_JWT_SECRET:-cmVwbGFjZS13aXRoLXlvdXItYWN0dWFsLWp3dC1zZWNyZXQtbWluaW11bS0zMi1ieXRlcw==}
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:8080
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  agent-service:
+    build:
+      context: ./services/agent-service
+      dockerfile: Dockerfile
+    container_name: mcs-agent-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/mcs_ai_platform
+      APP_JWT_SECRET: ${APP_JWT_SECRET:-cmVwbGFjZS13aXRoLXlvdXItYWN0dWFsLWp3dC1zZWNyZXQtbWluaW11bS0zMi1ieXRlcw==}
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:8080
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  chat-service:
+    build:
+      context: ./services/chat-service
+      dockerfile: Dockerfile
+    container_name: mcs-chat-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/mcs_ai_platform
+      APP_JWT_SECRET: ${APP_JWT_SECRET:-cmVwbGFjZS13aXRoLXlvdXItYWN0dWFsLWp3dC1zZWNyZXQtbWluaW11bS0zMi1ieXRlcw==}
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:8080
+      LLM_MOCK_ENABLED: "false"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma3:4b}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      AGENT_SERVICE_URL: http://agent-service:8083
+      RAG_SERVICE_URL: http://rag-service:8085
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      agent-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8084/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  rag-service:
+    build:
+      context: ./services/rag-service
+      dockerfile: Dockerfile
+    container_name: mcs-rag-service
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/mcs_ai_platform
+      APP_JWT_SECRET: ${APP_JWT_SECRET:-cmVwbGFjZS13aXRoLXlvdXItYWN0dWFsLWp3dC1zZWNyZXQtbWluaW11bS0zMi1ieXRlcw==}
+      APP_STORAGE_PATH: /app/uploads
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:8080
+      LLM_MOCK_ENABLED: "false"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    volumes:
+      - rag_uploads:/app/uploads
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8085/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  usage-service:
+    build:
+      context: ./services/usage-service
+      dockerfile: Dockerfile
+    container_name: mcs-usage-service
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/mcs_ai_platform
+      APP_JWT_SECRET: ${APP_JWT_SECRET:-cmVwbGFjZS13aXRoLXlvdXItYWN0dWFsLWp3dC1zZWNyZXQtbWluaW11bS0zMi1ieXRlcw==}
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:8080
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8086/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: mcs-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      BACKEND_URL: http://backend:8081
+      AUTH_SERVICE_URL: http://auth-service:8082
+      AGENT_SERVICE_URL: http://agent-service:8083
+      CHAT_SERVICE_URL: http://chat-service:8084
+      RAG_SERVICE_URL: http://rag-service:8085
+      USAGE_SERVICE_URL: http://usage-service:8086
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      APP_JWT_SECRET: ${APP_JWT_SECRET:-cmVwbGFjZS13aXRoLXlvdXItYWN0dWFsLWp3dC1zZWNyZXQtbWluaW11bS0zMi1ieXRlcw==}
+    depends_on:
+      backend:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      agent-service:
+        condition: service_healthy
+      chat-service:
+        condition: service_healthy
+      rag-service:
+        condition: service_healthy
+      usage-service:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: mcs-kafka-ui
+    ports:
+      - "9090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_BASE: /api
-        BACKEND_URL: http://backend:8081
+        BACKEND_URL: http://gateway:8080
     container_name: mcs-frontend
     ports:
       - "3000:3000"
     environment:
-      BACKEND_URL: http://backend:8081
+      BACKEND_URL: http://gateway:8080
     depends_on:
-      backend:
+      gateway:
         condition: service_healthy
 
 volumes:
   mongodb_data:
   backend_uploads:
+  chat_uploads:
+  rag_uploads:

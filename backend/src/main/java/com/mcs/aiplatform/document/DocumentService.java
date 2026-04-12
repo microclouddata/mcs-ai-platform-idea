@@ -1,6 +1,7 @@
 package com.mcs.aiplatform.document;
 
-import com.mcs.aiplatform.embedding.EmbeddingService;
+import com.mcs.aiplatform.kafka.event.DocumentUploadedEvent;
+import com.mcs.aiplatform.kafka.producer.DocumentEventProducer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -11,8 +12,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 @Service
@@ -24,16 +23,23 @@ public class DocumentService {
 
     private final DocumentFileRepository documentFileRepository;
     private final DocumentChunkRepository documentChunkRepository;
-    private final TextExtractorService textExtractorService;
-    private final EmbeddingService embeddingService;
+    private final DocumentEventProducer documentEventProducer;
 
+    /**
+     * Saves the uploaded file to disk, creates a {@code DocumentFile} record with
+     * status {@code PROCESSING}, then publishes a {@code document.uploaded} Kafka event
+     * and returns immediately.
+     *
+     * <p>The heavy pipeline (text extraction → chunking → embedding) runs asynchronously
+     * in {@code DocumentProcessingConsumer}, which updates the status to {@code PROCESSED}
+     * (or {@code FAILED}) when done.
+     */
     public DocumentFile upload(String userId, String agentId, MultipartFile file) throws IOException {
         Path dir = Paths.get(storageRoot);
         Files.createDirectories(dir);
 
         String safeName = System.currentTimeMillis() + "_" + sanitizeFileName(file.getOriginalFilename());
         Path target = dir.resolve(safeName);
-
         Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
 
         DocumentFile document = new DocumentFile();
@@ -46,61 +52,17 @@ public class DocumentService {
         document.setSize(file.getSize());
         document = documentFileRepository.save(document);
 
-        String text = textExtractorService.extractText(file);
-        List<String> chunks = splitText(text, 1000, 150);
+        // Publish event — async processing runs in DocumentProcessingConsumer
+        documentEventProducer.publishDocumentUploaded(new DocumentUploadedEvent(
+                document.getId(),
+                userId,
+                agentId,
+                target.toString(),
+                file.getOriginalFilename(),
+                file.getContentType()
+        ));
 
-        int idx = 0;
-        for (String chunkText : chunks) {
-            if (chunkText == null || chunkText.isBlank()) {
-                continue;
-            }
-
-            DocumentChunk chunk = new DocumentChunk();
-            chunk.setDocumentId(document.getId());
-            chunk.setUserId(userId);
-            chunk.setAgentId(agentId);
-            chunk.setChunkIndex(idx++);
-            chunk.setContent(chunkText);
-            chunk.setMetadata(new HashMap<>() {{
-                put("fileName", file.getOriginalFilename());
-                put("contentType", file.getContentType());
-            }});
-            chunk.setEmbedding(embeddingService.embed(chunkText));
-            documentChunkRepository.save(chunk);
-        }
-
-        document.setStatus("PROCESSED");
-        return documentFileRepository.save(document);
-    }
-
-    private List<String> splitText(String text, int chunkSize, int overlap) {
-        List<String> result = new ArrayList<>();
-        if (text == null || text.isBlank()) {
-            return result;
-        }
-
-        int start = 0;
-        int length = text.length();
-
-        while (start < length) {
-            int end = Math.min(start + chunkSize, length);
-            result.add(text.substring(start, end));
-
-            if (end == length) {
-                break;
-            }
-
-            start = Math.max(0, end - overlap);
-        }
-
-        return result;
-    }
-
-    private String sanitizeFileName(String fileName) {
-        if (fileName == null || fileName.isBlank()) {
-            return "unknown";
-        }
-        return fileName.replaceAll("[^a-zA-Z0-9._-]", "_");
+        return document;
     }
 
     public List<DocumentFile> list(String userId, String agentId) {
@@ -119,5 +81,10 @@ public class DocumentService {
         }
         documentChunkRepository.deleteByDocumentId(doc.getId());
         documentFileRepository.delete(doc);
+    }
+
+    private String sanitizeFileName(String fileName) {
+        if (fileName == null || fileName.isBlank()) return "unknown";
+        return fileName.replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 }
