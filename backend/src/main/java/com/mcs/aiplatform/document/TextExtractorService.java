@@ -11,37 +11,63 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Set;
 
 @Service
 public class TextExtractorService {
 
-    private static final java.util.Set<String> TEXT_EXTENSIONS = java.util.Set.of(
+    private static final Set<String> TEXT_EXTENSIONS = Set.of(
             ".txt", ".md", ".json", ".csv", ".xml", ".yaml", ".yml",
             ".html", ".htm", ".js", ".ts", ".java", ".py", ".sh", ".sql"
     );
 
-    private static final java.util.Set<String> IMAGE_EXTENSIONS = java.util.Set.of(
+    private static final Set<String> IMAGE_EXTENSIONS = Set.of(
             ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".svg"
     );
 
+    // ── MultipartFile path (HTTP upload, synchronous) ──────────────────────
+
     public String extractText(MultipartFile file) throws IOException {
         String fileName = file.getOriginalFilename() == null ? "" : file.getOriginalFilename().toLowerCase();
+        return extractFromBytes(file.getBytes(), fileName, file.getSize());
+    }
 
+    // ── Path-based extraction (Kafka consumer, async processing) ──────────
+
+    /**
+     * Extracts text from a file that has already been persisted to disk.
+     * Used by {@code DocumentProcessingConsumer} to process uploads asynchronously.
+     *
+     * @param filePath     path to the stored file
+     * @param originalName original filename (used to detect file type by extension)
+     */
+    public String extractTextFromPath(Path filePath, String originalName) throws IOException {
+        byte[] bytes = Files.readAllBytes(filePath);
+        String fileName = originalName == null ? filePath.getFileName().toString() : originalName.toLowerCase();
+        long size = Files.size(filePath);
+        return extractFromBytes(bytes, fileName, size);
+    }
+
+    // ── Shared extraction logic ────────────────────────────────────────────
+
+    private String extractFromBytes(byte[] bytes, String fileName, long size) throws IOException {
         for (String ext : TEXT_EXTENSIONS) {
             if (fileName.endsWith(ext)) {
-                return new String(file.getBytes(), StandardCharsets.UTF_8);
+                return new String(bytes, StandardCharsets.UTF_8);
             }
         }
 
         if (fileName.endsWith(".pdf")) {
-            try (PDDocument document = Loader.loadPDF(file.getBytes())) {
+            try (PDDocument document = Loader.loadPDF(bytes)) {
                 PDFTextStripper stripper = new PDFTextStripper();
                 return stripper.getText(document);
             }
         }
 
         if (fileName.endsWith(".docx")) {
-            try (XWPFDocument docx = new XWPFDocument(new ByteArrayInputStream(file.getBytes()));
+            try (XWPFDocument docx = new XWPFDocument(new ByteArrayInputStream(bytes));
                  XWPFWordExtractor extractor = new XWPFWordExtractor(docx)) {
                 return extractor.getText();
             }
@@ -49,11 +75,11 @@ public class TextExtractorService {
 
         for (String ext : IMAGE_EXTENSIONS) {
             if (fileName.endsWith(ext)) {
-                return "[Image attached: " + file.getOriginalFilename() + " (" + (file.getSize() / 1024) + " KB)]";
+                return "[Image attached: " + fileName + " (" + (size / 1024) + " KB)]";
             }
         }
 
-        // fallback: try reading as UTF-8 text
-        return new String(file.getBytes(), StandardCharsets.UTF_8);
+        // Fallback: try reading as UTF-8 text
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 }

@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: mcs-ai-platform
+  labels:
+    app: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      initContainers:
+        - name: wait-for-dependencies
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for backend at backend-service:8081..."
+              until nc -z backend-service 8081; do
+                echo "Backend not ready, retrying in 3s..."
+                sleep 3
+              done
+              echo "Backend is ready!"
+              echo "Waiting for Redis at redis:6379..."
+              until nc -z redis 6379; do
+                echo "Redis not ready, retrying in 3s..."
+                sleep 3
+              done
+              echo "Redis is ready!"
+      containers:
+        - name: gateway
+          image: mcs-ai-platform-gateway:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: BACKEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: mcs-config
+                  key: BACKEND_URL
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: mcs-config
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: mcs-config
+                  key: REDIS_PORT
+            - name: APP_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mcs-secrets
+                  key: APP_JWT_SECRET
+            - name: OTEL_SERVICE_NAME
+              value: "api-gateway"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: mcs-config
+                  key: OTEL_EXPORTER_OTLP_ENDPOINT
+            - name: OTEL_TRACES_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: mcs-config
+                  key: OTEL_TRACES_EXPORTER
+            - name: OTEL_METRICS_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: mcs-config
+                  key: OTEL_METRICS_EXPORTER
+            - name: OTEL_LOGS_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: mcs-config
+                  key: OTEL_LOGS_EXPORTER
+            - name: OTEL_PROPAGATORS
+              valueFrom:
+                configMapKeyRef:
+                  name: mcs-config
+                  key: OTEL_PROPAGATORS
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 5

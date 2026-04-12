@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: usage-service
+  namespace: mcs-ai-platform
+  labels:
+    app: usage-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: usage-service
+  template:
+    metadata:
+      labels:
+        app: usage-service
+    spec:
+      initContainers:
+        - name: wait-for-dependencies
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for MongoDB at mongodb:27017..."
+              until nc -z mongodb 27017; do sleep 3; done
+              echo "MongoDB ready!"
+              echo "Waiting for Kafka at kafka:9092..."
+              until nc -z kafka 9092; do sleep 3; done
+              echo "Kafka ready!"
+      containers:
+        - name: usage-service
+          image: mcs-usage-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8086
+          envFrom:
+            - configMapRef:
+                name: mcs-config
+          env:
+            - name: APP_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mcs-secrets
+                  key: APP_JWT_SECRET
+            - name: SPRING_DATA_MONGODB_URI
+              value: "mongodb://mongodb:27017/mcs_ai_platform"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8086
+            initialDelaySeconds: 45
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8086
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 5

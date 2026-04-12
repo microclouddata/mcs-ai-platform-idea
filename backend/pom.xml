@@ -94,6 +94,12 @@
             <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
 
+        <!-- Kafka: event-driven async document processing + usage recording -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
         <!-- Nashorn JS engine for Java 15+ (removed from JDK, required for nugget JS execution) -->
         <dependency>
             <groupId>org.openjdk.nashorn</groupId>

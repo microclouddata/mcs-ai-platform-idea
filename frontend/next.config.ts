@@ -6,7 +6,9 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.BACKEND_URL || 'http://localhost:8081'}/api/:path*`,
+        // In Docker/K8s, BACKEND_URL is set to http://gateway:8080 (see docker-compose.yml).
+        // In local dev without docker, point to the local gateway instance.
+        destination: `${process.env.BACKEND_URL || 'http://localhost:8080'}/api/:path*`,
       },
     ];
   },

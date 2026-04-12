@@ -9,7 +9,8 @@ import com.mcs.aiplatform.skill.SkillService;
 import com.mcs.aiplatform.tool.KnowledgeSearchTool;
 import com.mcs.aiplatform.tool.ToolResult;
 import com.mcs.aiplatform.tool.ToolService;
-import com.mcs.aiplatform.usage.UsageLogService;
+import com.mcs.aiplatform.kafka.event.UsageRecordedEvent;
+import com.mcs.aiplatform.kafka.producer.UsageEventProducer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -31,7 +32,7 @@ public class ChatService {
     private final ToolService toolService;
     private final SkillService skillService;
     private final MemoryService memoryService;
-    private final UsageLogService usageLogService;
+    private final UsageEventProducer usageEventProducer;
     private final LlmProviderFactory llmProviderFactory;
 
     public ChatResponse chat(String userId, ChatRequest request) {
@@ -123,11 +124,14 @@ public class ChatService {
         }
         chatMessageRepository.save(assistantMessage);
 
-        // Usage logging (token counts estimated; replace with actual counts from LLM response if available)
+        // Publish usage event asynchronously via Kafka — decouples MongoDB write from the chat path
         int promptTokens = prompt.length() / 4;
         int completionTokens = answer.length() / 4;
-        usageLogService.record(userId, agent.getId(), session.getId(),
-                agent.getProvider(), agent.getModel(), promptTokens, completionTokens);
+        usageEventProducer.publishUsageRecorded(new UsageRecordedEvent(
+                userId, agent.getId(), session.getId(),
+                agent.getProvider(), agent.getModel(),
+                promptTokens, completionTokens
+        ));
 
         return new ChatResponse(session.getId(), answer);
     }

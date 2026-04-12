@@ -32,10 +32,45 @@ jobs:
           kubectl apply -f k8s/mongodb-deployment.yml
           kubectl apply -f k8s/mongodb-service.yml
 
+      - name: Apply Kafka
+        run: |
+          kubectl apply -f k8s/kafka-deployment.yml
+          kubectl apply -f k8s/kafka-service.yml
+
+      - name: Apply Auth Service
+        run: |
+          kubectl apply -f k8s/auth-service-deployment.yml
+          kubectl apply -f k8s/auth-service-service.yml
+
+      - name: Apply Agent Service
+        run: |
+          kubectl apply -f k8s/agent-service-deployment.yml
+          kubectl apply -f k8s/agent-service-service.yml
+
+      - name: Apply Chat Service
+        run: |
+          kubectl apply -f k8s/chat-service-deployment.yml
+          kubectl apply -f k8s/chat-service-service.yml
+
+      - name: Apply RAG Service
+        run: |
+          kubectl apply -f k8s/rag-service-deployment.yml
+          kubectl apply -f k8s/rag-service-service.yml
+
+      - name: Apply Usage Service
+        run: |
+          kubectl apply -f k8s/usage-service-deployment.yml
+          kubectl apply -f k8s/usage-service-service.yml
+
       - name: Apply Backend
         run: |
           kubectl apply -f k8s/backend-deployment.yml
           kubectl apply -f k8s/backend-service.yml
+
+      - name: Apply API Gateway
+        run: |
+          kubectl apply -f k8s/gateway-deployment.yml
+          kubectl apply -f k8s/gateway-service.yml
 
       - name: Apply Frontend
         run: |

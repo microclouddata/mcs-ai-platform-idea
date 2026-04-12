@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: usage-service
+  namespace: mcs-ai-platform
+  labels:
+    app: usage-service
+spec:
+  selector:
+    app: usage-service
+  ports:
+    - name: http
+      port: 8086
+      targetPort: 8086
+  type: ClusterIP

@@ -24,9 +24,9 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: backend-service
+                name: gateway-service
                 port:
-                  number: 8081
+                  number: 8080
           # Jaeger UI — accessible at http://mcs-ai-platform.local/jaeger/
           # nginx strips the /jaeger prefix before forwarding (rewrite-target: /).
           - path: /jaeger

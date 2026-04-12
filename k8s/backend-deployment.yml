@@ -36,6 +36,12 @@ spec:
                 sleep 3
               done
               echo "Redis is ready!"
+              echo "Waiting for Kafka at kafka:9092..."
+              until nc -z kafka 9092; do
+                echo "Kafka not ready, retrying in 3s..."
+                sleep 3
+              done
+              echo "Kafka is ready!"
       containers:
         - name: backend
           image: mcs-ai-platform-backend:latest
