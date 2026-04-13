@@ -22,7 +22,8 @@
       "Bash(pandoc \"G:\\\\backup-data\\\\Dell\\\\own_company\\\\microclouddata\\\\AI\\\\project\\\\mcs-ai-platform\\\\documents\\\\upgrade\\\\upgrade中文版.docx\" -t markdown)",
       "Bash(pandoc --track-changes=all \"/Users/binchen/Downloads/upgrade中文版.docx\" -o /tmp/upgrade_content.md)",
       "Read(//tmp/**)",
-      "Bash(ls /Users/binchen/IdeaProjects/mcs-ai-platform-idea/.claude/worktrees/fervent-moore/k8s/*-service-*.yml)"
+      "Bash(ls /Users/binchen/IdeaProjects/mcs-ai-platform-idea/.claude/worktrees/fervent-moore/k8s/*-service-*.yml)",
+      "Bash(xargs grep:*)"
     ]
   }
 }
