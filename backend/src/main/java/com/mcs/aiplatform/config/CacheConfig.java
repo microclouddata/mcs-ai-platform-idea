@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * Redis caching strategy — four cache tiers as per architecture design:
  *
- * A. 热配置缓存 (Hot-config cache, TTL 30 min)
+ * A. 热配置缓存 (Hot-config cache, TTL 30 min)123
  *    "agents"      — Agent configs looked up on every chat request.
  *    "agent-tools" — Tool bindings per agent, rarely change.
  *    "agent-skills"— Skill list per agent, rarely change.
