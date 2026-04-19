@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtAuthGatewayFilterFactory extends AbstractGatewayFilterFactory<Object> {
 
-    @Value("${app.jwt.secret}")
+    @Value("${app.jwt.secret:${APP_JWT_SECRET:cUVHUmhsQ1ReaGF1OWhlMzM5JHJyRjZuUEVYaXUlemt5JDdjJVpuYjdsQklIVndSVVVXSXNmS0FWSyZodUVqKg==}}")
     private String jwtSecret;
 
     public JwtAuthGatewayFilterFactory() {

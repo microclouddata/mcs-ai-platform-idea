@@ -36,7 +36,8 @@
       "Bash(xargs cat *)",
       "Bash(grep \"\\\\.java$\")",
       "Bash(mongosh mongodb://localhost:27017/mcs_ai_platform --eval \"db.usage_logs.distinct\\('userId'\\)\" --quiet)",
-      "Bash(mongosh mongodb://localhost:27017/mcs_ai_platform --eval \"db.usage_logs.findOne\\({}, {userId:1, agentId:1, model:1, createdAt:1}\\)\" --quiet)"
+      "Bash(mongosh mongodb://localhost:27017/mcs_ai_platform --eval \"db.usage_logs.findOne\\({}, {userId:1, agentId:1, model:1, createdAt:1}\\)\" --quiet)",
+      "Bash(mvn compile *)"
     ]
   }
 }
