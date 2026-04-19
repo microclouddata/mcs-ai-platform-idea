@@ -15,7 +15,19 @@ public class DocumentEventProducer {
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public void publishDocumentUploaded(DocumentUploadedEvent event) {
-        kafkaTemplate.send(KafkaTopics.DOCUMENT_UPLOADED, event.documentId(), event);
-        log.info("Published document.uploaded event for documentId={}", event.documentId());
+        try {
+            kafkaTemplate.send(KafkaTopics.DOCUMENT_UPLOADED, event.documentId(), event)
+                    .whenComplete((result, ex) -> {
+                        if (ex != null) {
+                            log.error("Failed to publish document.uploaded event for documentId={}: {}",
+                                    event.documentId(), ex.getMessage());
+                        } else {
+                            log.info("Published document.uploaded event for documentId={}", event.documentId());
+                        }
+                    });
+        } catch (Exception ex) {
+            log.error("Kafka unavailable — skipping document.uploaded event for documentId={}: {}",
+                    event.documentId(), ex.getMessage());
+        }
     }
 }

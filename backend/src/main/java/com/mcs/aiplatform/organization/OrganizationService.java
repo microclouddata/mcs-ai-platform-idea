@@ -17,7 +17,8 @@ public class OrganizationService {
     private final OrgMembershipRepository membershipRepository;
     private final UserRepository userRepository;
 
-    public Organization create(String ownerId, CreateOrganizationRequest req) {
+    public Organization create(String ownerId, String ownerEmail, String ownerName,
+                               CreateOrganizationRequest req) {
         Organization org = new Organization();
         org.setName(req.name());
         org.setDescription(req.description());
@@ -25,12 +26,11 @@ public class OrganizationService {
         org.setOwnerId(ownerId);
         org = orgRepository.save(org);
 
-        User owner = userRepository.findById(ownerId).orElseThrow();
         OrgMembership membership = new OrgMembership();
         membership.setOrgId(org.getId());
         membership.setUserId(ownerId);
-        membership.setUserEmail(owner.getEmail());
-        membership.setUserName(owner.getName());
+        membership.setUserEmail(ownerEmail);
+        membership.setUserName(ownerName);
         membership.setRole(OrgRole.OWNER);
         membershipRepository.save(membership);
 

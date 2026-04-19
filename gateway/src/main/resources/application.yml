@@ -8,8 +8,13 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+  codec:
+    max-in-memory-size: 50MB
   cloud:
     gateway:
+      httpclient:
+        connect-timeout: 5000
+        response-timeout: 30s
       routes:
         # ── Public: auth endpoints → auth-service ────────────────────────────
         - id: auth-route
@@ -112,45 +117,59 @@ spring:
                 name: backendCircuitBreaker
                 fallbackUri: forward:/fallback
 
-# Circuit Breaker configuration (Resilience4j)
+# Circuit Breaker + TimeLimiter configuration (Resilience4j)
 resilience4j:
+  timelimiter:
+    instances:
+      authCircuitBreaker:
+        timeoutDuration: 10s
+      agentCircuitBreaker:
+        timeoutDuration: 10s
+      chatCircuitBreaker:
+        timeoutDuration: 60s   # chat can be slow (LLM inference)
+      ragCircuitBreaker:
+        timeoutDuration: 60s   # uploads + embedding can be slow
+      usageCircuitBreaker:
+        timeoutDuration: 10s
+      backendCircuitBreaker:
+        timeoutDuration: 10s
   circuitbreaker:
     instances:
       backendCircuitBreaker: &cbDefaults
         slidingWindowSize: 10
         minimumNumberOfCalls: 5
         failureRateThreshold: 50
-        waitDurationInOpenState: 10s
+        waitDurationInOpenState: 5s
         permittedNumberOfCallsInHalfOpenState: 3
       authCircuitBreaker:
         slidingWindowSize: 10
         minimumNumberOfCalls: 5
         failureRateThreshold: 50
-        waitDurationInOpenState: 10s
+        waitDurationInOpenState: 5s
         permittedNumberOfCallsInHalfOpenState: 3
       agentCircuitBreaker:
         slidingWindowSize: 10
         minimumNumberOfCalls: 5
         failureRateThreshold: 50
-        waitDurationInOpenState: 10s
+        waitDurationInOpenState: 5s
         permittedNumberOfCallsInHalfOpenState: 3
       chatCircuitBreaker:
         slidingWindowSize: 10
         minimumNumberOfCalls: 5
         failureRateThreshold: 50
-        waitDurationInOpenState: 10s
+        waitDurationInOpenState: 5s
         permittedNumberOfCallsInHalfOpenState: 3
       ragCircuitBreaker:
         slidingWindowSize: 10
         minimumNumberOfCalls: 5
         failureRateThreshold: 50
-        waitDurationInOpenState: 10s
+        waitDurationInOpenState: 5s
         permittedNumberOfCallsInHalfOpenState: 3
       usageCircuitBreaker:
         slidingWindowSize: 10
         minimumNumberOfCalls: 5
         failureRateThreshold: 50
-        waitDurationInOpenState: 10s
+        waitDurationInOpenState: 5s
         permittedNumberOfCallsInHalfOpenState: 3
 
 app:

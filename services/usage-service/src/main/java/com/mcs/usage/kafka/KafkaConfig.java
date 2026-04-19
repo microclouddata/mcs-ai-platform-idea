@@ -25,9 +25,10 @@ public class KafkaConfig {
 
     @Bean
     public ConsumerFactory<String, UsageRecordedEvent> consumerFactory() {
+        // Always deserialize to our local UsageRecordedEvent regardless of the
+        // __TypeId__ header set by the producer (chat-service uses a different package).
         JsonDeserializer<UsageRecordedEvent> deserializer = new JsonDeserializer<>(UsageRecordedEvent.class);
-        deserializer.addTrustedPackages("com.mcs.usage.kafka.event");
-        deserializer.setUseTypeHeaders(true);
+        deserializer.setUseTypeHeaders(false);
 
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);

@@ -13,6 +13,8 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       acks: all
       retries: 3
+      properties:
+        max.block.ms: 3000          # fail fast if Kafka is unreachable (default is 60s)
     consumer:
       group-id: rag-service
       auto-offset-reset: earliest
@@ -31,7 +33,7 @@ app:
   jwt:
     secret: ${APP_JWT_SECRET:cUVHUmhsQ1ReaGF1OWhlMzM5JHJyRjZuUEVYaXUlemt5JDdjJVpuYjdsQklIVndSVVVXSXNmS0FWSyZodUVqKg==}
   storage:
-    local-path: ${APP_STORAGE_PATH:/app/uploads}
+    local-path: ${APP_STORAGE_PATH:./uploads}
 llm:
   openai:
     api-key: ${OPENAI_API_KEY:}

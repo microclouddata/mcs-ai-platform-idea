@@ -23,7 +23,20 @@
       "Bash(pandoc --track-changes=all \"/Users/binchen/Downloads/upgrade中文版.docx\" -o /tmp/upgrade_content.md)",
       "Read(//tmp/**)",
       "Bash(ls /Users/binchen/IdeaProjects/mcs-ai-platform-idea/.claude/worktrees/fervent-moore/k8s/*-service-*.yml)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(curl -s http://localhost:8085/actuator/health)",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -X POST http://localhost:8085/api/documents/upload -F \"file=@/etc/hosts\" -F \"agentId=test\")",
+      "Bash(curl -s http://localhost:8080/actuator/health)",
+      "Bash(curl -s http://localhost:8080/actuator/circuitbreakers)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('components',{}\\), indent=2\\)\\)\")",
+      "Bash(xargs ls *)",
+      "Bash(ps -p 4208 -o pid,lstart,command)",
+      "Bash(ps -p 4204 -o pid,lstart,command)",
+      "Bash(xargs cat *)",
+      "Bash(grep \"\\\\.java$\")",
+      "Bash(mongosh mongodb://localhost:27017/mcs_ai_platform --eval \"db.usage_logs.distinct\\('userId'\\)\" --quiet)",
+      "Bash(mongosh mongodb://localhost:27017/mcs_ai_platform --eval \"db.usage_logs.findOne\\({}, {userId:1, agentId:1, model:1, createdAt:1}\\)\" --quiet)"
     ]
   }
 }

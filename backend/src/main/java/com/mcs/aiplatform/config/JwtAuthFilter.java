@@ -1,6 +1,7 @@
 package com.mcs.aiplatform.config;
 
 import com.mcs.aiplatform.auth.JwtService;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,12 +41,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         // ── Path 1: trust gateway-injected headers ───────────────────────────
         String userId = request.getHeader("X-User-Id");
         if (userId != null && !userId.isBlank()) {
-            String role = request.getHeader("X-User-Role");
+            String role  = request.getHeader("X-User-Role");
+            String email = request.getHeader("X-User-Email");
+            String name  = request.getHeader("X-User-Name");
             String grantedRole = "ROLE_" + (role != null && !role.isBlank() ? role : "USER");
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
-                            new JwtUserPrincipal(userId),
+                            new JwtUserPrincipal(userId, email, name),
                             null,
                             List.of(new SimpleGrantedAuthority(grantedRole))
                     );
@@ -67,13 +70,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        String jwtUserId = jwtService.extractUserId(token);
-        String jwtRole = jwtService.extractAllClaims(token).get("role", String.class);
+        Claims claims    = jwtService.extractAllClaims(token);
+        String jwtUserId = claims.getSubject();
+        String jwtRole   = claims.get("role",  String.class);
+        String jwtEmail  = claims.get("email", String.class);
+        String jwtName   = claims.get("name",  String.class);
         String grantedRole = "ROLE_" + (jwtRole != null ? jwtRole : "USER");
 
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(
-                        new JwtUserPrincipal(jwtUserId),
+                        new JwtUserPrincipal(jwtUserId, jwtEmail, jwtName),
                         null,
                         List.of(new SimpleGrantedAuthority(grantedRole))
                 );

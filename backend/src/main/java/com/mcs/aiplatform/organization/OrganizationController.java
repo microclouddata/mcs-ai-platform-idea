@@ -21,7 +21,8 @@ public class OrganizationController {
 
     @PostMapping
     public ApiResponse<Organization> create(@RequestBody CreateOrganizationRequest req) {
-        return ApiResponse.ok(orgService.create(CurrentUser.userId(), req));
+        return ApiResponse.ok(orgService.create(
+                CurrentUser.userId(), CurrentUser.email(), CurrentUser.name(), req));
     }
 
     @GetMapping("/{orgId}")

@@ -33,7 +33,7 @@ spec:
             - containerPort: 8082
           env:
             - name: SPRING_DATA_MONGODB_URI
-              value: "mongodb://mongodb:27017/mcs_auth"
+              value: "mongodb://mongodb:27017/mcs_ai_platform"
             - name: APP_JWT_SECRET
               valueFrom:
                 secretKeyRef:

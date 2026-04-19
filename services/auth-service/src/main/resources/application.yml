@@ -5,7 +5,7 @@ spring:
     name: auth-service
   data:
     mongodb:
-      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/mcs_auth}
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/mcs_ai_platform}
 app:
   jwt:
     secret: ${APP_JWT_SECRET:cUVHUmhsQ1ReaGF1OWhlMzM5JHJyRjZuUEVYaXUlemt5JDdjJVpuYjdsQklIVndSVVVXSXNmS0FWSyZodUVqKg==}
