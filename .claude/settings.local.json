@@ -37,7 +37,12 @@
       "Bash(grep \"\\\\.java$\")",
       "Bash(mongosh mongodb://localhost:27017/mcs_ai_platform --eval \"db.usage_logs.distinct\\('userId'\\)\" --quiet)",
       "Bash(mongosh mongodb://localhost:27017/mcs_ai_platform --eval \"db.usage_logs.findOne\\({}, {userId:1, agentId:1, model:1, createdAt:1}\\)\" --quiet)",
-      "Bash(mvn compile *)"
+      "Bash(mvn compile *)",
+      "Bash(mkdir -p /Users/binchen/IdeaProjects/mcs-ai-platform-idea/common/src/main/java/com/mcs/common/model)",
+      "Bash(mkdir -p /Users/binchen/IdeaProjects/mcs-ai-platform-idea/common/src/main/java/com/mcs/common/web)",
+      "Bash(mkdir -p /Users/binchen/IdeaProjects/mcs-ai-platform-idea/common/src/main/java/com/mcs/common/security)",
+      "Bash(mkdir -p /Users/binchen/IdeaProjects/mcs-ai-platform-idea/common/src/test/java/com/mcs/common)",
+      "Bash(mvn install *)"
     ]
   }
 }

@@ -1,6 +1,13 @@
-backend/target/
+# Maven build output - all services
+**/target/
+
+# Uploads
 backend/uploads/
+
+# Frontend
 frontend/.next/
 frontend/node_modules/
+
+# IDE & OS
 .idea/
 .DS_Store

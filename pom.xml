@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!--
+    MCS AI Platform – Root Aggregator POM
+    ======================================
+    This POM is a BUILD REACTOR: it tells Maven the order in which to build
+    all modules so that `mvn clean install -DskipTests` from the project root
+    compiles and installs every service in one command.
+
+    NOTE: Child modules keep their own <parent> (spring-boot-starter-parent) so
+    that Lombok, plugin management and Spring Boot auto-config work unchanged.
+    This root POM is NOT inherited by children — it is only an aggregator.
+
+    Module build order (Maven resolves inter-module dependencies automatically):
+      1. common        ← shared library, built first
+      2. gateway       ← API gateway
+      3. backend       ← platform-service (org, billing, admin)
+      4. services/*    ← all domain microservices
+  -->
+
+  <groupId>com.mcs</groupId>
+  <artifactId>mcs-ai-platform</artifactId>
+  <version>1.0.0</version>
+  <packaging>pom</packaging>
+  <name>MCS AI Platform</name>
+  <description>Root build aggregator for MCS AI Platform microservices</description>
+
+  <modules>
+    <module>common</module>
+    <module>gateway</module>
+    <module>backend</module>
+    <module>services</module>
+  </modules>
+
+</project>

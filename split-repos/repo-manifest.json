@@ -1,0 +1,65 @@
+{
+  "generatedAt": "2026-04-22",
+  "repositories": [
+    {
+      "name": "gateway-service",
+      "type": "spring-cloud-gateway",
+      "source": "gateway",
+      "notes": "API gateway, JWT propagation, rate limiting and circuit breaking."
+    },
+    {
+      "name": "common-service",
+      "type": "java-library",
+      "source": "common",
+      "notes": "Shared library consumed by all Java services."
+    },
+    {
+      "name": "auth-service",
+      "type": "spring-boot-service",
+      "source": "services/auth-service",
+      "notes": "Login, register, JWT issuance."
+    },
+    {
+      "name": "agent-service",
+      "type": "spring-boot-service",
+      "source": "services/agent-service",
+      "notes": "Agent, skill and tool management."
+    },
+    {
+      "name": "chat-service",
+      "type": "spring-boot-service",
+      "source": "services/chat-service",
+      "notes": "Conversation orchestration, LLM calls and usage events."
+    },
+    {
+      "name": "rag-service",
+      "type": "spring-boot-service",
+      "source": "services/rag-service",
+      "notes": "Document ingestion, chunking and retrieval."
+    },
+    {
+      "name": "usage-service",
+      "type": "spring-boot-service",
+      "source": "services/usage-service",
+      "notes": "Kafka consumer and usage aggregation."
+    },
+    {
+      "name": "organization-service",
+      "type": "spring-boot-service",
+      "source": "backend (organization + user/auth/config subset)",
+      "notes": "Extracted from legacy backend. Billing and admin code were not copied."
+    },
+    {
+      "name": "platform-service",
+      "type": "spring-boot-service",
+      "source": "backend",
+      "notes": "Standalone extraction of the current backend module, including organization, billing and admin."
+    },
+    {
+      "name": "frontend",
+      "type": "nextjs-app",
+      "source": "frontend",
+      "notes": "Standalone web app. Defaults to gateway URL via NEXT_PUBLIC_API_BASE."
+    }
+  ]
+}
